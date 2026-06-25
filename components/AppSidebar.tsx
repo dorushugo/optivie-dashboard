@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Users,
-  ShieldAlert,
-  GitBranch,
+  TableProperties,
+  Mail,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,10 +21,10 @@ import {
 } from "@/components/ui/sidebar";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/courtiers", label: "Courtiers", icon: Users },
-  { href: "/resiliations", label: "Résiliations", icon: ShieldAlert },
-  { href: "/pipeline", label: "Pipeline", icon: GitBranch },
+  { href: "/", label: "Cockpit", icon: LayoutDashboard },
+  { href: "/operations", label: "Operations", icon: TableProperties },
+  { href: "/automations", label: "Automations", icon: Mail },
+  { href: "/settings", label: "Parametres", icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -39,7 +39,7 @@ export function AppSidebar() {
           </div>
           <div>
             <p className="text-sm font-semibold tracking-tight">Optivie</p>
-            <p className="text-xs text-muted-foreground">Dashboard Commercial</p>
+            <p className="text-xs text-muted-foreground">SalesOps Dashboard</p>
           </div>
         </div>
       </SidebarHeader>

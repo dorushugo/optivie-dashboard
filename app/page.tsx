@@ -9,375 +9,419 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  ReferenceLine,
   Cell,
+  LineChart,
+  Line,
 } from "recharts";
-import { CheckCircle, XCircle } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  RefreshCw,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Users,
+  Target,
+  ShieldAlert,
+  Database,
+  DollarSign,
+  Info,
+  ChevronRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { KpiCard } from "@/components/KpiCard";
-import { AlertBadge } from "@/components/AlertBadge";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  kpiGlobal,
+  computeKPIs,
+  computePriorityActions,
+  computeCourtierPerformance,
   conversionDelai,
   impactRelances,
-  courtiers,
-  canaux,
-} from "@/data/optivie";
+  evolutionCPL,
+} from "@/data/computed";
 
 const BRAND_GREEN = "hsl(162, 70%, 38%)";
 const WARNING = "hsl(38, 92%, 50%)";
 const DESTRUCTIVE = "hsl(0, 84%, 60%)";
 
-const delaiColors = [BRAND_GREEN, WARNING, DESTRUCTIVE, DESTRUCTIVE];
-
-const relancesColors = [DESTRUCTIVE, WARNING, "hsl(162, 50%, 45%)", BRAND_GREEN];
-
-function CustomTooltipDelai({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
-      <p className="font-semibold">{label}</p>
-      <p className="text-muted-foreground">Taux : {payload[0].value}%</p>
-    </div>
-  );
-}
-
-function CustomTooltipRelances({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
-      <p className="font-semibold">{label}</p>
-      <p className="text-muted-foreground">Taux : {payload[0].value}%</p>
-    </div>
-  );
-}
-
-const courtiersByTranche: Record<string, Array<{ nom: string; taux: number }>> = {
-  "1–4h": [{ nom: "Mehdi", taux: 57.1 }],
-  "4–12h": [{ nom: "Sonia", taux: 39.6 }],
-  "12–24h": [{ nom: "Axel", taux: 14.0 }],
-  "24–48h": [{ nom: "Clara", taux: 8.0 }, { nom: "Romain", taux: 10.9 }],
+type KpiTileProps = {
+  title: string;
+  value: string;
+  subtitle?: string;
+  trend?: "up" | "down" | "neutral";
+  status?: "ok" | "warning" | "critical";
+  info?: string;
+  progress?: { value: number; max: number };
 };
 
-export default function DashboardPage() {
-  const [period, setPeriod] = useState<string>("Annuel");
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [selectedTranche, setSelectedTranche] = useState<string>("");
-
-  const handleBarClick = (tranche: string) => {
-    setSelectedTranche(tranche);
-    setSheetOpen(true);
-  };
-
-  const periodLabel = period === "Ce mois" ? "Juin 2025" : period === "Ce trimestre" ? "T2 2025" : "2025";
+function KpiTile({ title, value, subtitle, trend, status, info, progress }: KpiTileProps) {
+  const statusColor = status === "critical" ? "text-destructive" : status === "warning" ? "text-warning" : "text-brand-green";
+  const statusBg = status === "critical" ? "bg-destructive/5" : status === "warning" ? "bg-warning/5" : "";
 
   return (
-    <div className="space-y-6">
+    <Card className={`rounded-lg border bg-card shadow-sm ${statusBg}`}>
+      <CardContent className="pt-4 pb-3 px-4">
+        <div className="flex items-start justify-between mb-1">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</span>
+          {info && (
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="size-3.5 text-muted-foreground/60" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-xs">{info}</TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className={`text-2xl font-bold tracking-tight ${status ? statusColor : ""}`}>{value}</span>
+          {trend && (
+            <TrendingUp className={`size-3.5 ${trend === "up" ? "text-brand-green" : trend === "down" ? "text-destructive rotate-180" : "text-muted-foreground"}`} />
+          )}
+        </div>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+        {progress && (
+          <div className="mt-2">
+            <Progress value={(progress.value / progress.max) * 100} className="h-1.5" />
+            <p className="text-[10px] text-muted-foreground mt-0.5">{progress.value} / {progress.max}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CustomChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name?: string }>; label?: string }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-md border bg-popover px-3 py-2 text-xs shadow-md">
+      <p className="font-semibold">{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} className="text-muted-foreground">{p.name}: {p.value}{typeof p.value === "number" && p.value < 100 ? "%" : ""}</p>
+      ))}
+    </div>
+  );
+}
+
+const priorityColors: Record<string, string> = {
+  critique: "bg-destructive/10 text-destructive border-destructive/20",
+  haute: "bg-warning/10 text-warning border-warning/20",
+  moyenne: "bg-muted text-muted-foreground border-border",
+  basse: "bg-muted text-muted-foreground border-border",
+};
+
+const actionIcons: Record<string, typeof Phone> = {
+  contacter: Phone,
+  relancer: Mail,
+  reassigner: RefreshCw,
+  migrer_crm: Database,
+  qualifier_motif: AlertTriangle,
+  retention: ShieldAlert,
+};
+
+export default function CockpitPage() {
+  const [courtierFilter, setCourtierFilter] = useState<string>("all");
+  const [periodFilter, setPeriodFilter] = useState<string>("mois");
+
+  const kpis = computeKPIs();
+  const actions = computePriorityActions();
+  const courtierPerf = computeCourtierPerformance();
+
+  const filteredActions = courtierFilter === "all"
+    ? actions
+    : actions.filter(a => a.courtier === courtierFilter || a.courtier === "Tous");
+
+  return (
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Dashboard Commercial
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight">Cockpit commercial</h1>
           <p className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString("fr-FR", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-            {" "}&mdash; <span className="font-medium text-foreground">{periodLabel}</span>
+            Vue operationnelle du {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="rounded-full">
-            Objectif : 1 500 contrats
-          </Badge>
-          <div className="flex items-center gap-1 ml-4">
-            {["Ce mois", "Ce trimestre", "Annuel"].map((p) => (
-              <Button
-                key={p}
-                variant={period === p ? "default" : "outline"}
-                size="sm"
-                className="rounded-full text-xs"
-                onClick={() => setPeriod(p)}
-              >
-                {p}
-              </Button>
-            ))}
-          </div>
+          <Select value={courtierFilter} onValueChange={(v) => setCourtierFilter(v ?? "all")}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue placeholder="Courtier" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les courtiers</SelectItem>
+              {courtierPerf.map(c => (
+                <SelectItem key={c.nom} value={c.nom}>{c.nom}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v ?? "mois")}>
+            <SelectTrigger className="w-[120px] h-8 text-xs">
+              <SelectValue placeholder="Periode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="jour">Aujourd&apos;hui</SelectItem>
+              <SelectItem value="semaine">Cette semaine</SelectItem>
+              <SelectItem value="mois">Ce mois</SelectItem>
+              <SelectItem value="annuel">Annuel</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <KpiCard
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+        <KpiTile
           title="Contrats actifs"
-          value="1 200"
-          progress={{ value: kpiGlobal.contratsActifs, max: kpiGlobal.objectifContrats }}
+          value={kpis.contratsActifs.toLocaleString("fr-FR")}
+          progress={{ value: kpis.contratsActifs, max: kpis.objectifContrats }}
+          info="Nombre de contrats en portefeuille. Objectif : 1 500 sous 18 mois."
         />
-        <KpiCard
+        <KpiTile
           title="Taux de conversion"
-          value={`${kpiGlobal.tauxConversion}%`}
-          subtitle="Cible : 32%"
-          badge={{ label: "Sous-performance", variant: "destructive" }}
+          value={`${kpis.tauxConversion}%`}
+          subtitle={`${kpis.totalConvertis} convertis / ${kpis.totalLeads} leads`}
+          status="critical"
+          info="Part des leads transformes en contrats signes. Cible : 32%."
         />
-        <KpiCard
-          title="Leads ce mois"
-          value={kpiGlobal.leadsMensuels.toString()}
-          badge={{ label: "Stable", variant: "secondary" }}
+        <KpiTile
+          title="Contact sous SLA"
+          value={`${kpis.tauxContactSLA}%`}
+          subtitle={`${kpis.leadsHorsSLA} leads hors SLA (>4h)`}
+          status="critical"
+          info="Part des leads contactes en moins de 4h apres reception. Au-dela, la conversion chute de 50% a 10%."
         />
-        <KpiCard
+        <KpiTile
+          title="Taux de relance"
+          value={`${kpis.tauxRelance}%`}
+          subtitle={`${kpis.leadsSansRelance} leads sans relance`}
+          status="critical"
+          info="Part des leads ayant recu au moins 1 relance. 2 relances multiplient la conversion par 2.6."
+        />
+        <KpiTile
+          title="Saisie CRM"
+          value={`${kpis.tauxCRM}%`}
+          subtitle={`${kpis.contratsHorsCRM} contrats hors CRM`}
+          status={kpis.tauxCRM < 80 ? "critical" : kpis.tauxCRM < 95 ? "warning" : "ok"}
+          info="Part des contrats saisis dans le CRM. Les contrats hors CRM representent un risque en cas de depart du courtier."
+        />
+        <KpiTile
           title="Commissions perdues"
-          value={`${kpiGlobal.commissionPerdue.toLocaleString("fr-FR")} €`}
-          subtitle={`${kpiGlobal.resiliationsAnnuelles} résiliations`}
-          badge={{ label: "Critique", variant: "destructive" }}
+          value={`${kpis.commissionsPerdue.toLocaleString("fr-FR")} EUR`}
+          subtitle={`${kpis.totalResiliations} resiliations`}
+          status="critical"
+          info="Total des commissions recurrentes perdues suite a des resiliations non anticipees en 2025."
+        />
+        <KpiTile
+          title="Commissions a risque"
+          value={`${kpis.commissionsARisque.toLocaleString("fr-FR")} EUR`}
+          subtitle={`${kpis.resiliationsEvitables} evitables`}
+          status="warning"
+          info="Estimation des commissions associees aux clients susceptibles de resilier (motifs evitables : hausse de prime, offre concurrente, insatisfaction)."
+        />
+        <KpiTile
+          title="CAC moyen"
+          value={`${kpis.cacGlobal} EUR`}
+          subtitle={`Budget : ${kpis.budgetTotal.toLocaleString("fr-FR")} EUR/an`}
+          status="warning"
+          info="Cout d'acquisition moyen par contrat signe via les comparateurs. Les recommandations convertissent a 42.6% pour 0 EUR."
+        />
+        <KpiTile
+          title="Leads ce mois"
+          value={kpis.leadsMensuels.toString()}
+          trend="neutral"
+          info="Volume mensuel moyen de leads recus tous canaux confondus."
+        />
+        <KpiTile
+          title="Croissance nette"
+          value={`+${kpis.croissanceNette}/mois`}
+          subtitle="Contrats nets (signes - resilies)"
+          trend="up"
+          info="Nombre net de contrats gagnes par mois apres deduction des resiliations."
         />
       </div>
 
-      {/* Alerte SLA */}
-      <AlertBadge
-        title="Alerte SLA — Délai de premier contact"
-        description="62% des leads sont contactés après 12h. Taux de conversion actuel : 10,6%. Avec un SLA 4h : potentiel 40–50%."
-        variant="destructive"
-      />
-
-      {/* Graphique délai × conversion */}
-      <Card className="rounded-lg border bg-card shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold tracking-tight">
-            Conversion par délai de premier contact
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Corrélation r = -0,95 — chaque heure perdue réduit la conversion
-          </p>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={conversionDelai} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 10%, 88%)" />
-              <XAxis dataKey="tranche" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} unit="%" />
-              <RechartsTooltip content={<CustomTooltipDelai />} />
-              <ReferenceLine
-                y={50.3}
-                stroke={BRAND_GREEN}
-                strokeDasharray="4 4"
-                label={{ value: "SLA 4h", position: "right", fontSize: 11, fill: BRAND_GREEN }}
-              />
-              <Bar
-                dataKey="taux"
-                radius={[4, 4, 0, 0]}
-                cursor="pointer"
-                onClick={(data) => handleBarClick((data as unknown as { tranche: string }).tranche)}
-              >
-                {conversionDelai.map((_, index) => (
-                  <Cell key={index} fill={delaiColors[index]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Sheet détail par tranche */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Courtiers — Tranche {selectedTranche}</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4 space-y-3">
-            {courtiersByTranche[selectedTranche]?.map((c) => (
-              <div key={c.nom} className="flex items-center justify-between rounded-md border p-3">
-                <span className="font-medium">{c.nom}</span>
-                <Badge variant={c.taux > 30 ? "default" : "destructive"}>
-                  {c.taux}%
-                </Badge>
+      {/* Main content: Actions + Charts */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        {/* Priority actions */}
+        <Card className="xl:col-span-1 rounded-lg border bg-card shadow-sm">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-semibold">Priorites du jour</CardTitle>
+              <Badge variant="destructive" className="text-[10px]">{filteredActions.filter(a => a.priority === "critique").length} critiques</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ScrollArea className="h-[380px]">
+              <div className="px-4 pb-4 space-y-2">
+                {filteredActions.map((action) => {
+                  const Icon = actionIcons[action.type] || AlertTriangle;
+                  return (
+                    <div
+                      key={action.id}
+                      className={`rounded-md border p-3 space-y-1.5 ${priorityColors[action.priority]}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2">
+                          <Icon className="size-3.5 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium leading-tight">{action.label}</p>
+                            <p className="text-[10px] opacity-75">{action.target} / {action.courtier}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] shrink-0 capitalize">{action.priority}</Badge>
+                      </div>
+                      <p className="text-[10px] opacity-60">{action.impact}</p>
+                      <div className="flex gap-1.5 pt-1">
+                        <Button size="xs" variant="outline" className="h-5 text-[10px] px-2 rounded-full">
+                          {action.type === "contacter" ? "Appeler" : action.type === "relancer" ? "Relancer" : action.type === "migrer_crm" ? "Migrer" : "Traiter"}
+                        </Button>
+                        <Button size="xs" variant="ghost" className="h-5 text-[10px] px-2 rounded-full">
+                          Reassigner
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </SheetContent>
-      </Sheet>
+            </ScrollArea>
+          </CardContent>
+        </Card>
 
-      {/* Graphique impact des relances */}
-      <Card className="rounded-lg border bg-card shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold tracking-tight">
-            Impact des relances sur la conversion
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">
-            73% des leads reçoivent 0 relance — gain potentiel : +238 contrats (+35 700 €/an)
-          </p>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={impactRelances} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 10%, 88%)" />
-              <XAxis dataKey="relances" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} unit="%" />
-              <RechartsTooltip content={<CustomTooltipRelances />} />
-              <Bar dataKey="taux" radius={[4, 4, 0, 0]}>
-                {impactRelances.map((_, index) => (
-                  <Cell key={index} fill={relancesColors[index]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="mt-2 text-xs text-muted-foreground text-center">
-            <Badge variant="secondary" className="rounded-full">
-              2 relances = ×2,6 vs 0 relance
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Charts column */}
+        <div className="xl:col-span-2 space-y-4">
+          {/* Conversion par délai */}
+          <Card className="rounded-lg border bg-card shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm font-semibold">Conversion selon le delai de premier contact</CardTitle>
+                  <p className="text-[10px] text-muted-foreground">Correlation r = -0.95 : chaque heure perdue reduit la conversion</p>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-xs">Les leads contactes en moins de 4h convertissent a 50%. Au-dela de 12h, le taux chute sous 12%. Le SLA cible est de 4h maximum.</TooltipContent>
+                </Tooltip>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={conversionDelai} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 10%, 90%)" />
+                  <XAxis dataKey="tranche" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} unit="%" />
+                  <RechartsTooltip content={<CustomChartTooltip />} />
+                  <Bar dataKey="taux" radius={[3, 3, 0, 0]} name="Taux">
+                    {conversionDelai.map((_, i) => (
+                      <Cell key={i} fill={i === 0 ? BRAND_GREEN : i === 1 ? WARNING : DESTRUCTIVE} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-      {/* Tableau courtiers */}
-      <Card className="rounded-lg border bg-card shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold tracking-tight">
-            Performance par courtier
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead className="text-right">Contrats</TableHead>
-                <TableHead className="text-right">CRM</TableHead>
-                <TableHead className="text-right">Délai médian</TableHead>
-                <TableHead className="text-right">Conversion</TableHead>
-                <TableHead className="text-right">Churn</TableHead>
-                <TableHead className="text-center">SLA</TableHead>
-                <TableHead>Statut</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {courtiers.map((c) => {
-                const rowBg =
-                  c.statut === "critique"
-                    ? "bg-destructive/5"
-                    : c.statut === "alerte"
-                    ? "bg-warning/5"
-                    : "bg-brand-green/5";
-
-                return (
-                  <TableRow key={c.nom} className={`${rowBg} hover:bg-accent`}>
-                    <TableCell className="font-medium">
-                      {c.nom === "Mehdi" ? (
-                        <Tooltip>
-                          <TooltipTrigger className="cursor-help underline decoration-dotted">
-                            {c.nom}
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>
-                              Attention — 78 068 € de commissions récurrentes
-                              non tracées dans le CRM. Risque de perte totale en
-                              cas de départ.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        c.nom
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{c.contrats}</TableCell>
-                    <TableCell className="text-right">
-                      {c.crmSaisie === 0 ? (
-                        <Badge variant="destructive">CRM 0%</Badge>
-                      ) : (
-                        <span className="text-brand-green font-medium">100%</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{c.delaiMedian}h</TableCell>
-                    <TableCell className="text-right">{c.tauxConversion}%</TableCell>
-                    <TableCell className="text-right">
-                      {c.churn}%
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {c.delaiMedian <= 4 ? (
-                        <CheckCircle className="size-4 text-brand-green mx-auto" />
-                      ) : (
-                        <XCircle className="size-4 text-destructive mx-auto" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          c.statut === "critique"
-                            ? "destructive"
-                            : c.statut === "bon"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {c.statut}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Canaux d'acquisition */}
-      <div className="grid grid-cols-4 gap-4">
-        {canaux.map((c) => {
-          const borderColor =
-            c.canal === "Assurland" || c.canal === "LesFurets"
-              ? "border-l-warning"
-              : c.canal === "Recommandations"
-              ? "border-l-brand-green"
-              : "border-l-border";
-
-          return (
-            <Card
-              key={c.canal}
-              className={`rounded-lg border bg-card shadow-sm border-l-4 ${borderColor}`}
-            >
+          {/* Two side-by-side charts */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Impact relances */}
+            <Card className="rounded-lg border bg-card shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">{c.canal}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">Impact des relances</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">73% des leads ne recoivent aucune relance. Avec 2 relances, la conversion passe de 15% a 39% (x2.6).</TooltipContent>
+                  </Tooltip>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-1">
-                <p className="text-2xl font-bold">{c.volume} leads</p>
-                <p className="text-sm text-muted-foreground">
-                  Conversion : {c.tauxConversion}%
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  CAC : {c.cac !== null ? `${c.cac} €` : "—"}
-                </p>
-                {c.budget > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Budget : {c.budget.toLocaleString("fr-FR")} €/an
-                  </p>
-                )}
+              <CardContent>
+                <ResponsiveContainer width="100%" height={160}>
+                  <BarChart data={impactRelances} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 10%, 90%)" />
+                    <XAxis dataKey="relances" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} unit="%" />
+                    <RechartsTooltip content={<CustomChartTooltip />} />
+                    <Bar dataKey="taux" radius={[3, 3, 0, 0]} name="Conversion">
+                      {impactRelances.map((_, i) => (
+                        <Cell key={i} fill={i === 0 ? DESTRUCTIVE : i === 1 ? WARNING : BRAND_GREEN} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
-          );
-        })}
+
+            {/* CPL Evolution */}
+            <Card className="rounded-lg border bg-card shadow-sm">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold">Evolution CPL comparateurs</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">Cout par lead en hausse de +31% sur l'annee pour les deux comparateurs. Annonce de +40% supplementaires pour 2027.</TooltipContent>
+                  </Tooltip>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={evolutionCPL} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 10%, 90%)" />
+                    <XAxis dataKey="mois" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} unit="€" />
+                    <RechartsTooltip content={<CustomChartTooltip />} />
+                    <Line type="monotone" dataKey="assurland" stroke={DESTRUCTIVE} strokeWidth={2} dot={false} name="Assurland" />
+                    <Line type="monotone" dataKey="lesfurets" stroke={WARNING} strokeWidth={2} dot={false} name="LesFurets" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Courtier performance mini-table */}
+          <Card className="rounded-lg border bg-card shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold">Performance courtiers</CardTitle>
+                <Button variant="ghost" size="xs" className="text-[10px] h-5 gap-1" onClick={() => window.location.href = "/operations"}>
+                  Voir detail <ChevronRight className="size-3" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1.5">
+                {courtierPerf.map((c) => (
+                  <div key={c.nom} className="flex items-center justify-between py-1.5 px-2 rounded-md hover:bg-accent text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className={`size-2 rounded-full ${c.statut === "critique" ? "bg-destructive" : c.statut === "alerte" ? "bg-warning" : "bg-brand-green"}`} />
+                      <span className="font-medium">{c.nom}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-muted-foreground">
+                      <span>{c.contrats} contrats</span>
+                      <span>{c.tauxConversion}% conv.</span>
+                      <span>{c.delaiMedian}h delai</span>
+                      <span>{c.crmSaisie}% CRM</span>
+                      {c.leadsHorsSLA > 0 && (
+                        <Badge variant="destructive" className="text-[9px] h-4">{c.leadsHorsSLA} hors SLA</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
