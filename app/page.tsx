@@ -152,7 +152,7 @@ export default function CockpitPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Cockpit commercial</h1>
           <p className="text-sm text-muted-foreground">
-            Vue operationnelle du {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+            Vue opérationnelle du {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export default function CockpitPage() {
           </Select>
           <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v ?? "mois")}>
             <SelectTrigger className="w-[120px] h-8 text-xs">
-              <SelectValue placeholder="Periode" />
+              <SelectValue placeholder="Période" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="jour">Aujourd&apos;hui</SelectItem>
@@ -194,62 +194,62 @@ export default function CockpitPage() {
           value={`${kpis.tauxConversion}%`}
           subtitle={`${kpis.totalConvertis} convertis / ${kpis.totalLeads} leads`}
           status="critical"
-          info="Part des leads transformes en contrats signes. Cible : 32%."
+          info="Part des leads transformés en contrats signés. Cible : 32%."
         />
         <KpiTile
           title="Contact sous SLA"
           value={`${kpis.tauxContactSLA}%`}
           subtitle={`${kpis.leadsHorsSLA} leads hors SLA (>4h)`}
           status="critical"
-          info="Part des leads contactes en moins de 4h apres reception. Au-dela, la conversion chute de 50% a 10%."
+          info="Part des leads contactés en moins de 4h après réception. Au-delà, la conversion chute de 50% à 10%."
         />
         <KpiTile
           title="Taux de relance"
           value={`${kpis.tauxRelance}%`}
           subtitle={`${kpis.leadsSansRelance} leads sans relance`}
           status="critical"
-          info="Part des leads ayant recu au moins 1 relance. 2 relances multiplient la conversion par 2.6."
+          info="Part des leads ayant reçu au moins 1 relance. 2 relances multiplient la conversion par 2,6."
         />
         <KpiTile
           title="Saisie CRM"
           value={`${kpis.tauxCRM}%`}
           subtitle={`${kpis.contratsHorsCRM} contrats hors CRM`}
           status={kpis.tauxCRM < 80 ? "critical" : kpis.tauxCRM < 95 ? "warning" : "ok"}
-          info="Part des contrats saisis dans le CRM. Les contrats hors CRM representent un risque en cas de depart du courtier."
+          info="Part des contrats saisis dans le CRM. Les contrats hors CRM représentent un risque en cas de départ du courtier."
         />
         <KpiTile
           title="Commissions perdues"
-          value={`${kpis.commissionsPerdue.toLocaleString("fr-FR")} EUR`}
-          subtitle={`${kpis.totalResiliations} resiliations`}
+          value={`${kpis.commissionsPerdue.toLocaleString("fr-FR")} €`}
+          subtitle={`${kpis.totalResiliations} résiliations`}
           status="critical"
-          info="Total des commissions recurrentes perdues suite a des resiliations non anticipees en 2025."
+          info="Total des commissions récurrentes perdues suite à des résiliations non anticipées en 2025."
         />
         <KpiTile
-          title="Commissions a risque"
-          value={`${kpis.commissionsARisque.toLocaleString("fr-FR")} EUR`}
-          subtitle={`${kpis.resiliationsEvitables} evitables`}
+          title="Commissions à risque"
+          value={`${kpis.commissionsARisque.toLocaleString("fr-FR")} €`}
+          subtitle={`${kpis.contratsARisque} contrats à risque`}
           status="warning"
-          info="Estimation des commissions associees aux clients susceptibles de resilier (motifs evitables : hausse de prime, offre concurrente, insatisfaction)."
+          info="Somme des commissions récurrentes des contrats ayant le statut 'À risque' dans le portefeuille actuel."
         />
         <KpiTile
-          title="CAC moyen"
-          value={`${kpis.cacGlobal} EUR`}
-          subtitle={`Budget : ${kpis.budgetTotal.toLocaleString("fr-FR")} EUR/an`}
+          title="CAC comparateurs"
+          value={`${kpis.cacComparateurs} €`}
+          subtitle={`Budget : ${kpis.budgetComparateurs.toLocaleString("fr-FR")} €/an`}
           status="warning"
-          info="Cout d'acquisition moyen par contrat signe via les comparateurs. Les recommandations convertissent a 42.6% pour 0 EUR."
+          info="Coût d'acquisition par contrat signé via les comparateurs (budget total / contrats signés). Les recommandations convertissent à 42,6% pour 0 €."
         />
         <KpiTile
-          title="Leads ce mois"
-          value={kpis.leadsMensuels.toString()}
+          title="Leads/mois (moyenne)"
+          value={kpis.leadsMoyenMensuel.toString()}
           trend="neutral"
-          info="Volume mensuel moyen de leads recus tous canaux confondus."
+          info="Moyenne mensuelle calculée sur 2025 (2 059 leads / 12 mois). Varie de 125 à 225 selon le mois."
         />
         <KpiTile
           title="Croissance nette"
           value={`+${kpis.croissanceNette}/mois`}
-          subtitle="Contrats nets (signes - resilies)"
+          subtitle="Contrats nets (signés − résiliés)"
           trend="up"
-          info="Nombre net de contrats gagnes par mois apres deduction des resiliations."
+          info="Contrats nets gagnés par mois : 415 convertis − 216 résiliations = 199/an soit 16,6/mois."
         />
       </div>
 
@@ -259,7 +259,7 @@ export default function CockpitPage() {
         <Card className="xl:col-span-1 rounded-lg border bg-card shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold">Priorites du jour</CardTitle>
+              <CardTitle className="text-sm font-semibold">Priorités du jour</CardTitle>
               <Badge variant="destructive" className="text-[10px]">{filteredActions.filter(a => a.priority === "critique").length} critiques</Badge>
             </div>
           </CardHeader>
@@ -285,11 +285,11 @@ export default function CockpitPage() {
                       </div>
                       <p className="text-[10px] opacity-60">{action.impact}</p>
                       <div className="flex gap-1.5 pt-1">
-                        <Button size="xs" variant="outline" className="h-5 text-[10px] px-2 rounded-full">
+                        <Button size="sm" variant="outline" className="h-5 text-[10px] px-2 rounded-full">
                           {action.type === "contacter" ? "Appeler" : action.type === "relancer" ? "Relancer" : action.type === "migrer_crm" ? "Migrer" : "Traiter"}
                         </Button>
-                        <Button size="xs" variant="ghost" className="h-5 text-[10px] px-2 rounded-full">
-                          Reassigner
+                        <Button size="sm" variant="ghost" className="h-5 text-[10px] px-2 rounded-full">
+                          Réassigner
                         </Button>
                       </div>
                     </div>
@@ -307,12 +307,12 @@ export default function CockpitPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-sm font-semibold">Conversion selon le delai de premier contact</CardTitle>
-                  <p className="text-[10px] text-muted-foreground">Correlation r = -0.95 : chaque heure perdue reduit la conversion</p>
+                  <CardTitle className="text-sm font-semibold">Conversion selon le délai de premier contact</CardTitle>
+                  <p className="text-[10px] text-muted-foreground">Corrélation r = −0,95 : chaque heure perdue réduit la conversion</p>
                 </div>
                 <Tooltip>
                   <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-xs">Les leads contactes en moins de 4h convertissent a 50%. Au-dela de 12h, le taux chute sous 12%. Le SLA cible est de 4h maximum.</TooltipContent>
+                  <TooltipContent className="max-w-xs text-xs">Les leads contactés en moins de 4h convertissent à 50%. Au-delà de 12h, le taux chute sous 12%. Le SLA cible est de 4h maximum.</TooltipContent>
                 </Tooltip>
               </div>
             </CardHeader>
@@ -342,7 +342,7 @@ export default function CockpitPage() {
                   <CardTitle className="text-sm font-semibold">Impact des relances</CardTitle>
                   <Tooltip>
                     <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-xs">73% des leads ne recoivent aucune relance. Avec 2 relances, la conversion passe de 15% a 39% (x2.6).</TooltipContent>
+                    <TooltipContent className="max-w-xs text-xs">73% des leads ne reçoivent aucune relance. Avec 2 relances, la conversion passe de 15% à 39% (×2,6).</TooltipContent>
                   </Tooltip>
                 </div>
               </CardHeader>
@@ -367,10 +367,10 @@ export default function CockpitPage() {
             <Card className="rounded-lg border bg-card shadow-sm">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold">Evolution CPL comparateurs</CardTitle>
+                  <CardTitle className="text-sm font-semibold">Évolution CPL comparateurs</CardTitle>
                   <Tooltip>
                     <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-xs">Cout par lead en hausse de +31% sur l'annee pour les deux comparateurs. Annonce de +40% supplementaires pour 2027.</TooltipContent>
+                    <TooltipContent className="max-w-xs text-xs">Coût par lead en hausse de +31% sur l&apos;année pour les deux comparateurs. Annonce de +40% supplémentaires pour 2027.</TooltipContent>
                   </Tooltip>
                 </div>
               </CardHeader>
@@ -394,8 +394,8 @@ export default function CockpitPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold">Performance courtiers</CardTitle>
-                <Button variant="ghost" size="xs" className="text-[10px] h-5 gap-1" onClick={() => window.location.href = "/operations"}>
-                  Voir detail <ChevronRight className="size-3" />
+                <Button variant="ghost" size="sm" className="text-[10px] h-5 gap-1" onClick={() => window.location.href = "/operations"}>
+                  Voir détail <ChevronRight className="size-3" />
                 </Button>
               </div>
             </CardHeader>
@@ -410,10 +410,10 @@ export default function CockpitPage() {
                     <div className="flex items-center gap-4 text-muted-foreground">
                       <span>{c.contrats} contrats</span>
                       <span>{c.tauxConversion}% conv.</span>
-                      <span>{c.delaiMedian}h delai</span>
+                      <span>{c.delaiMedian}h délai</span>
                       <span>{c.crmSaisie}% CRM</span>
-                      {c.leadsHorsSLA > 0 && (
-                        <Badge variant="destructive" className="text-[9px] h-4">{c.leadsHorsSLA} hors SLA</Badge>
+                      {c.horsSLA > 0 && (
+                        <Badge variant="destructive" className="text-[9px] h-4">{c.horsSLA} hors SLA</Badge>
                       )}
                     </div>
                   </div>

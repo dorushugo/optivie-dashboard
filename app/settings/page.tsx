@@ -30,16 +30,16 @@ type Rule = {
 };
 
 const defaultRules: Rule[] = [
-  { id: "r1", name: "Alerte SLA depassement", description: "Si un lead n'est pas contacte apres 4h, une alerte est envoyee au manager avec possibilite de reassignation", active: true, category: "sla" },
-  { id: "r2", name: "Priorite recommandation", description: "Les leads issus de recommandations sont automatiquement classes en priorite haute", active: true, category: "priorite" },
-  { id: "r3", name: "Relance devis automatique", description: "Si un devis ouvert n'est pas signe apres 3 jours, une relance automatique est envoyee", active: true, category: "relance" },
-  { id: "r4", name: "Tache retention echeance", description: "A J-30 de l'echeance d'un contrat, une tache de retention est creee pour le courtier responsable", active: false, category: "retention" },
-  { id: "r5", name: "Qualification motif obligatoire", description: "Si une resiliation est enregistree sans motif, une tache de qualification est automatiquement creee", active: true, category: "retention" },
-  { id: "r6", name: "Migration CRM prioritaire", description: "Les contrats hors CRM avec une commission superieure a 150 EUR/an sont marques comme migration prioritaire", active: true, category: "crm" },
-  { id: "r7", name: "Reassignation surcharge", description: "Si un courtier a plus de 50 leads non traites, les nouveaux leads sont automatiquement reassignes", active: false, category: "attribution" },
-  { id: "r8", name: "Scoring lead automatique", description: "Les leads sont scores automatiquement selon la source, le profil et le produit demande", active: true, category: "priorite" },
-  { id: "r9", name: "Alerte churn eleve", description: "Si le taux de churn d'un courtier depasse 20%, une alerte est remontee au manager", active: true, category: "retention" },
-  { id: "r10", name: "CAC maximum", description: "Si le CAC d'un canal depasse 400 EUR, une alerte est envoyee pour arbitrage budgetaire", active: true, category: "acquisition" },
+  { id: "r1", name: "Alerte SLA dépassement", description: "Si un lead n'est pas contacté après 4h, une alerte est envoyée au manager avec possibilité de réassignation", active: true, category: "sla" },
+  { id: "r2", name: "Priorité recommandation", description: "Les leads issus de recommandations sont automatiquement classés en priorité haute", active: true, category: "priorite" },
+  { id: "r3", name: "Relance devis automatique", description: "Si un devis ouvert n'est pas signé après 3 jours, une relance automatique est envoyée", active: true, category: "relance" },
+  { id: "r4", name: "Tâche rétention échéance", description: "À J-30 de l'échéance d'un contrat, une tâche de rétention est créée pour le courtier responsable", active: false, category: "retention" },
+  { id: "r5", name: "Qualification motif obligatoire", description: "Si une résiliation est enregistrée sans motif, une tâche de qualification est automatiquement créée", active: true, category: "retention" },
+  { id: "r6", name: "Migration CRM prioritaire", description: "Les contrats hors CRM avec une commission supérieure à 150 €/an sont marqués comme migration prioritaire", active: true, category: "crm" },
+  { id: "r7", name: "Réassignation surcharge", description: "Si un courtier a plus de 50 leads non traités, les nouveaux leads sont automatiquement réassignés", active: false, category: "attribution" },
+  { id: "r8", name: "Scoring lead automatique", description: "Les leads sont scorés automatiquement selon la source, le profil et le produit demandé", active: true, category: "priorite" },
+  { id: "r9", name: "Alerte churn élevé", description: "Si le taux de churn d'un courtier dépasse 20%, une alerte est remontée au manager", active: true, category: "retention" },
+  { id: "r10", name: "CAC maximum", description: "Si le CAC d'un canal dépasse 400 €, une alerte est envoyée pour arbitrage budgétaire", active: true, category: "acquisition" },
 ];
 
 export default function SettingsPage() {
@@ -60,10 +60,10 @@ export default function SettingsPage() {
 
   const categories = [...new Set(rules.map(r => r.category))];
   const categoryLabels: Record<string, string> = {
-    sla: "SLA et delais",
-    priorite: "Priorite et scoring",
+    sla: "SLA et délais",
+    priorite: "Priorité et scoring",
     relance: "Relances",
-    retention: "Retention et churn",
+    retention: "Rétention et churn",
     crm: "CRM",
     attribution: "Attribution",
     acquisition: "Acquisition",
@@ -74,12 +74,12 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Parametres</h1>
-          <p className="text-sm text-muted-foreground">Configuration des regles SalesOps et seuils d'alerte</p>
+          <h1 className="text-xl font-semibold tracking-tight">Paramètres</h1>
+          <p className="text-sm text-muted-foreground">Configuration des règles SalesOps et seuils d&apos;alerte</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="h-7 text-xs rounded-full gap-1">
-            <RotateCcw className="size-3" /> Reinitialiser
+            <RotateCcw className="size-3" /> Réinitialiser
           </Button>
           <Button size="sm" className="h-7 text-xs rounded-full gap-1">
             <Save className="size-3" /> Enregistrer
@@ -100,7 +100,7 @@ export default function SettingsPage() {
                   <Label className="text-xs">SLA premier contact (heures)</Label>
                   <Tooltip>
                     <TooltipTrigger><Info className="size-3 text-muted-foreground" /></TooltipTrigger>
-                    <TooltipContent className="text-xs max-w-xs">Delai maximum acceptable pour le premier contact avec un lead. Au-dela, une alerte est declenchee.</TooltipContent>
+                    <TooltipContent className="text-xs max-w-xs">Délai maximum acceptable pour le premier contact avec un lead. Au-delà, une alerte est déclenchée.</TooltipContent>
                   </Tooltip>
                 </div>
                 <Input value={slaHours} onChange={(e) => setSlaHours(e.target.value)} className="h-7 text-xs mt-1" />
@@ -110,13 +110,13 @@ export default function SettingsPage() {
                   <Label className="text-xs">Objectif contrats</Label>
                   <Tooltip>
                     <TooltipTrigger><Info className="size-3 text-muted-foreground" /></TooltipTrigger>
-                    <TooltipContent className="text-xs max-w-xs">Nombre total de contrats actifs vises.</TooltipContent>
+                    <TooltipContent className="text-xs max-w-xs">Nombre total de contrats actifs visés.</TooltipContent>
                   </Tooltip>
                 </div>
                 <Input value={objectifContrats} onChange={(e) => setObjectifContrats(e.target.value)} className="h-7 text-xs mt-1" />
               </div>
               <div>
-                <Label className="text-xs">Delai objectif (mois)</Label>
+                <Label className="text-xs">Délai objectif (mois)</Label>
                 <Input value={objectifMois} onChange={(e) => setObjectifMois(e.target.value)} className="h-7 text-xs mt-1" />
               </div>
               <div>
@@ -128,7 +128,7 @@ export default function SettingsPage() {
                 <Input value={churnMaxAlerte} onChange={(e) => setChurnMaxAlerte(e.target.value)} className="h-7 text-xs mt-1" />
               </div>
               <div>
-                <Label className="text-xs">CAC max alerte (EUR)</Label>
+                <Label className="text-xs">CAC max alerte (€)</Label>
                 <Input value={cacMaxAlerte} onChange={(e) => setCacMaxAlerte(e.target.value)} className="h-7 text-xs mt-1" />
               </div>
             </div>
@@ -144,27 +144,27 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between py-2">
               <div>
                 <p className="text-xs font-medium">Relance J+1</p>
-                <p className="text-[10px] text-muted-foreground">Email automatique 24h apres le premier contact sans reponse</p>
+                <p className="text-[10px] text-muted-foreground">Email automatique 24h après le premier contact sans réponse</p>
               </div>
               <Switch checked={relanceJ1} onCheckedChange={setRelanceJ1} />
             </div>
             <div className="flex items-center justify-between py-2 border-t">
               <div>
                 <p className="text-xs font-medium">Relance J+3</p>
-                <p className="text-[10px] text-muted-foreground">Deuxieme relance si aucune interaction apres 3 jours</p>
+                <p className="text-[10px] text-muted-foreground">Deuxième relance si aucune interaction après 3 jours</p>
               </div>
               <Switch checked={relanceJ3} onCheckedChange={setRelanceJ3} />
             </div>
             <div className="flex items-center justify-between py-2 border-t">
               <div>
                 <p className="text-xs font-medium">Relance J+7</p>
-                <p className="text-[10px] text-muted-foreground">Derniere relance avec proposition d'echange telephonique</p>
+                <p className="text-[10px] text-muted-foreground">Dernière relance avec proposition d&apos;échange téléphonique</p>
               </div>
               <Switch checked={relanceJ7} onCheckedChange={setRelanceJ7} />
             </div>
 
             <div className="pt-3 border-t">
-              <Label className="text-xs">Delai entre relances (jours)</Label>
+              <Label className="text-xs">Délai entre relances (jours)</Label>
               <div className="grid grid-cols-3 gap-2 mt-1">
                 <Input defaultValue="1" className="h-7 text-xs" />
                 <Input defaultValue="3" className="h-7 text-xs" />
@@ -175,11 +175,11 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      {/* Rules */}
+      {/* Règles */}
       <Card className="rounded-lg border bg-card shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">Regles d'automatisation</CardTitle>
+            <CardTitle className="text-sm font-semibold">Règles d&apos;automatisation</CardTitle>
             <Badge variant="secondary" className="text-[10px]">{rules.filter(r => r.active).length}/{rules.length} actives</Badge>
           </div>
         </CardHeader>

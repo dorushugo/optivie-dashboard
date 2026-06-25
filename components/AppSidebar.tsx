@@ -22,9 +22,9 @@ import {
 
 const navItems = [
   { href: "/", label: "Cockpit", icon: LayoutDashboard },
-  { href: "/operations", label: "Operations", icon: TableProperties },
-  { href: "/automations", label: "Automations", icon: Mail },
-  { href: "/settings", label: "Parametres", icon: Settings },
+  { href: "/operations", label: "Opérations", icon: TableProperties },
+  { href: "/automations", label: "Automatisations", icon: Mail },
+  { href: "/settings", label: "Paramètres", icon: Settings },
 ];
 
 export function AppSidebar() {

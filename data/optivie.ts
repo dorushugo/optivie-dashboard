@@ -1,29 +1,49 @@
 export const kpiGlobal = {
   contratsActifs: 1200,
+  contratsActifsStatut: { actif: 962, aRisque: 147, enRenouvellement: 91 },
   objectifContrats: 1500,
   leadsAnnuels: 2059,
-  leadsMensuels: 172,
-  tauxConversion: 20.2,
+  leadsMensuels: 172, // moyenne : 2059/12
+  tauxConversion: 20.2, // 415/2059
   commissionRecurrente: 182170,
-  croissanceNette: 22,
+  croissanceNette: 16.6, // (415 - 216) / 12
   objectifMois: 18,
   resiliationsAnnuelles: 216,
   commissionPerdue: 56630,
+  commissionsARisque: 21324, // contrats statut "À risque"
+  contratsARisque: 147,
+  resiliationsEvitables: 81,
+  commissionEvitablePerdue: 21406,
+};
+
+export const leadsParMois: Record<string, number> = {
+  "January 2025": 225,
+  "February 2025": 180,
+  "March 2025": 206,
+  "April 2025": 189,
+  "May 2025": 162,
+  "June 2025": 153,
+  "July 2025": 135,
+  "August 2025": 125,
+  "September 2025": 198,
+  "October 2025": 180,
+  "November 2025": 162,
+  "December 2025": 144,
 };
 
 export const courtiers = [
-  { nom: "Mehdi", contrats: 504, crmSaisie: 0, delaiMedian: 5, tauxConversion: 57.1, churn: 18.1, leadsTraites: 266, commission: 78068, partPortefeuille: 42, sourceDominante: "Recommandation", risque: "Portefeuille opaque — 0% CRM", statut: "critique" },
-  { nom: "Sonia", contrats: 280, crmSaisie: 100, delaiMedian: 8, tauxConversion: 39.6, churn: 15.4, leadsTraites: 207, commission: 42540, partPortefeuille: 23.3, sourceDominante: "Recommandation", risque: "Surcharge — refuse des leads", statut: "bon" },
-  { nom: "Axel", contrats: 190, crmSaisie: 100, delaiMedian: 15, tauxConversion: 14.0, churn: 22.1, leadsTraites: 637, commission: 28665, partPortefeuille: 15.8, sourceDominante: "Comparateurs", risque: "Leads faible qualité", statut: "alerte" },
-  { nom: "Clara", contrats: 140, crmSaisie: 100, delaiMedian: 23, tauxConversion: 8.0, churn: 22.1, leadsTraites: 387, commission: 20138, partPortefeuille: 11.7, sourceDominante: "Comparateurs", risque: "Leads faible qualité", statut: "alerte" },
-  { nom: "Romain", contrats: 86, crmSaisie: 100, delaiMedian: 31, tauxConversion: 10.9, churn: 10.5, leadsTraites: 562, commission: 12759, partPortefeuille: 7.2, sourceDominante: "Comparateurs", risque: "Faible volume", statut: "alerte" },
+  { nom: "Mehdi", contrats: 504, crmSaisie: 0, delaiMedian: 5, tauxConversion: 57.1, churn: 18.1, leadsTraites: 266, commission: 78068, partPortefeuille: 42, sourceDominante: "Recommandation", risque: "Portefeuille opaque, 0% CRM", statut: "critique", horsSLA: 149, relancesDues: 10 },
+  { nom: "Sonia", contrats: 280, crmSaisie: 100, delaiMedian: 8, tauxConversion: 39.6, churn: 15.4, leadsTraites: 207, commission: 42540, partPortefeuille: 23.3, sourceDominante: "Recommandation", risque: "Surcharge, refuse des leads", statut: "bon", horsSLA: 181, relancesDues: 10 },
+  { nom: "Axel", contrats: 190, crmSaisie: 100, delaiMedian: 15, tauxConversion: 14.0, churn: 22.1, leadsTraites: 637, commission: 28665, partPortefeuille: 15.8, sourceDominante: "Comparateurs", risque: "Leads faible qualité", statut: "alerte", horsSLA: 637, relancesDues: 137 },
+  { nom: "Clara", contrats: 140, crmSaisie: 100, delaiMedian: 23, tauxConversion: 8.0, churn: 22.1, leadsTraites: 387, commission: 20138, partPortefeuille: 11.7, sourceDominante: "Comparateurs", risque: "Leads faible qualité", statut: "alerte", horsSLA: 387, relancesDues: 145 },
+  { nom: "Romain", contrats: 86, crmSaisie: 100, delaiMedian: 31, tauxConversion: 10.9, churn: 10.5, leadsTraites: 562, commission: 12759, partPortefeuille: 7.2, sourceDominante: "Comparateurs", risque: "Faible volume", statut: "alerte", horsSLA: 562, relancesDues: 199 },
 ] as const;
 
 export const conversionDelai = [
-  { tranche: "1–4h", leads: 143, convertis: 72, taux: 50.3 },
-  { tranche: "4–12h", leads: 642, convertis: 206, taux: 32.1 },
-  { tranche: "12–24h", leads: 735, convertis: 84, taux: 11.4 },
-  { tranche: "24–48h", leads: 539, convertis: 53, taux: 9.8 },
+  { tranche: "0\u20134h", leads: 143, convertis: 72, taux: 50.3 },
+  { tranche: "4\u201312h", leads: 642, convertis: 206, taux: 32.1 },
+  { tranche: "12\u201324h", leads: 735, convertis: 84, taux: 11.4 },
+  { tranche: "24\u201348h", leads: 539, convertis: 53, taux: 9.8 },
 ];
 
 export const impactRelances = [
@@ -34,10 +54,10 @@ export const impactRelances = [
 ];
 
 export const canaux = [
-  { canal: "Assurland", volume: 611, tauxConversion: 11.1, cac: 37.8, budget: 21840 },
-  { canal: "LesFurets", volume: 529, tauxConversion: 10.0, cac: 34.1, budget: 20890 },
-  { canal: "Recommandations", volume: 617, tauxConversion: 42.6, cac: 0, budget: 0 },
-  { canal: "Prospection directe", volume: 302, tauxConversion: 10.3, cac: null, budget: 0 },
+  { canal: "Assurland", volume: 611, tauxConversion: 11.1, cplMoyen: 37.8, budget: 21840, convertis: 68 },
+  { canal: "LesFurets", volume: 529, tauxConversion: 10.0, cplMoyen: 34.1, budget: 20890, convertis: 53 },
+  { canal: "Recommandations", volume: 617, tauxConversion: 42.6, cplMoyen: 0, budget: 0, convertis: 263 },
+  { canal: "Prospection directe", volume: 302, tauxConversion: 10.3, cplMoyen: 0, budget: 0, convertis: 31 },
 ];
 
 export const evolutionCPL = [
@@ -73,11 +93,36 @@ export const resiliationsParCourtier = [
   { courtier: "Romain", resiliations: 9, taux: 10.5 },
 ];
 
+// Contrats à risque (extraits de la feuille Contrats, statut "À risque")
+export const contratsARisque = [
+  { id: "C0011", prenom: "Nicolas", nom: "Bernard", courtier: "Mehdi", produit: "Complémentaire santé", commission: 193, crm: false },
+  { id: "C0019", prenom: "Amélie", nom: "Evrard", courtier: "Mehdi", produit: "Complémentaire santé", commission: 89, crm: false },
+  { id: "C0020", prenom: "Pascal", nom: "Klein", courtier: "Mehdi", produit: "Assurance emprunteur", commission: 110, crm: false },
+  { id: "C0021", prenom: "Nathalie", nom: "Thomas", courtier: "Mehdi", produit: "Assurance vie", commission: 224, crm: false },
+  { id: "C0030", prenom: "François", nom: "Mercier", courtier: "Mehdi", produit: "Assurance vie", commission: 168, crm: false },
+  { id: "C0032", prenom: "Quentin", nom: "Muller", courtier: "Mehdi", produit: "Complémentaire santé", commission: 219, crm: false },
+  { id: "C0040", prenom: "Béatrice", nom: "Cohen", courtier: "Mehdi", produit: "Complémentaire santé", commission: 113, crm: false },
+  { id: "C0059", prenom: "David", nom: "Garnier", courtier: "Mehdi", produit: "Assurance emprunteur", commission: 111, crm: false },
+  { id: "C0062", prenom: "Valérie", nom: "Dupont", courtier: "Mehdi", produit: "Complémentaire santé", commission: 79, crm: false },
+  { id: "C0065", prenom: "Ophélie", nom: "Tessier", courtier: "Mehdi", produit: "Assurance emprunteur", commission: 224, crm: false },
+  { id: "C0080", prenom: "Patricia", nom: "Nguyen", courtier: "Mehdi", produit: "Complémentaire santé", commission: 120, crm: false },
+  { id: "C0087", prenom: "Ugo", nom: "Adam", courtier: "Mehdi", produit: "Assurance emprunteur", commission: 126, crm: false },
+  { id: "C0092", prenom: "Alexis", nom: "Dubois", courtier: "Mehdi", produit: "Complémentaire santé", commission: 184, crm: false },
+  { id: "C0095", prenom: "Marie", nom: "Lebrun", courtier: "Mehdi", produit: "Assurance emprunteur", commission: 225, crm: false },
+  { id: "C0098", prenom: "Camille", nom: "Aubert", courtier: "Mehdi", produit: "Assurance emprunteur", commission: 134, crm: false },
+  { id: "C0100", prenom: "Camille", nom: "Tessier", courtier: "Mehdi", produit: "Prévoyance", commission: 101, crm: false },
+  { id: "C0107", prenom: "Béatrice", nom: "Nguyen", courtier: "Mehdi", produit: "Prévoyance", commission: 90, crm: false },
+  { id: "C0121", prenom: "Valérie", nom: "Fabre", courtier: "Mehdi", produit: "Assurance vie", commission: 133, crm: false },
+  { id: "C0125", prenom: "Karen", nom: "Aubert", courtier: "Mehdi", produit: "Complémentaire santé", commission: 178, crm: false },
+  { id: "C0131", prenom: "François", nom: "Morin", courtier: "Mehdi", produit: "Assurance vie", commission: 112, crm: false },
+];
+
 export const funnel = [
-  { etape: "Leads reçus", valeur: 2059, source: "Dataset" },
-  { etape: "Avec ≥1 relance", valeur: 563, source: "Dataset relances" },
-  { etape: "Décisions en cours", valeur: 649, source: "Statut 'En cours'" },
-  { etape: "Convertis", valeur: 415, source: "Statut 'Converti'" },
+  { etape: "Leads reçus", valeur: 2059 },
+  { etape: "Contactés", valeur: 2059 },
+  { etape: "En cours", valeur: 649 },
+  { etape: "Convertis", valeur: 415 },
+  { etape: "Perdus", valeur: 995 },
 ];
 
 export const scenarios = [

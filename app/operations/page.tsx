@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -25,24 +25,26 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Search,
   Download,
-  Filter,
   Phone,
-  Mail,
   Info,
-  ArrowUpDown,
+  Columns3,
+  CalendarClock,
+  ClipboardList,
 } from "lucide-react";
 import {
   computeCourtierPerformance,
-  generateLeadsData,
-  generateResiliationRiskClients,
+  getContratsARisque,
   canaux,
-  motifsResiliations,
-  conversionDelai,
-  funnel,
 } from "@/data/computed";
 
 type ViewType = "leads" | "courtiers" | "resiliations" | "acquisition" | "crm" | "pipeline";
@@ -50,7 +52,7 @@ type ViewType = "leads" | "courtiers" | "resiliations" | "acquisition" | "crm" |
 const views: { id: ViewType; label: string }[] = [
   { id: "leads", label: "Leads" },
   { id: "courtiers", label: "Courtiers" },
-  { id: "resiliations", label: "Resiliations" },
+  { id: "resiliations", label: "Résiliations" },
   { id: "acquisition", label: "Acquisition" },
   { id: "crm", label: "CRM" },
   { id: "pipeline", label: "Pipeline" },
@@ -58,38 +60,97 @@ const views: { id: ViewType; label: string }[] = [
 
 const statusBadge = (status: string) => {
   switch (status) {
-    case "hors_sla": case "critique": return <Badge variant="destructive" className="text-[10px]">Critique</Badge>;
-    case "proche": case "eleve": case "alerte": return <Badge className="text-[10px] bg-warning/10 text-warning border-warning/20">A surveiller</Badge>;
-    case "ok": case "bon": case "modere": return <Badge className="text-[10px] bg-brand-green/10 text-brand-green border-brand-green/20">OK</Badge>;
-    default: return <Badge variant="secondary" className="text-[10px]">{status}</Badge>;
+    case "hors_sla":
+    case "critique":
+      return <Badge variant="destructive" className="text-[10px]">Critique</Badge>;
+    case "proche":
+    case "élevé":
+    case "eleve":
+    case "alerte":
+      return <Badge className="text-[10px] bg-warning/10 text-warning border-warning/20">À surveiller</Badge>;
+    case "ok":
+    case "bon":
+    case "modéré":
+    case "modere":
+      return <Badge className="text-[10px] bg-brand-green/10 text-brand-green border-brand-green/20">OK</Badge>;
+    default:
+      return <Badge variant="secondary" className="text-[10px]">{status}</Badge>;
   }
 };
+
+const pipelineData = [
+  {
+    statut: "Leads reçus",
+    nombre: 2059,
+    part: "100%",
+    description: "Total des leads entrants sur la période",
+    action: "Maintenir le flux d'acquisition",
+  },
+  {
+    statut: "En cours",
+    nombre: 649,
+    part: "31,5%",
+    description: "Leads en traitement actif par les courtiers",
+    action: "Accélérer les prises de décision",
+  },
+  {
+    statut: "Convertis",
+    nombre: 415,
+    part: "20,2%",
+    description: "Leads transformés en contrats signés",
+    action: "Développer les recommandations",
+  },
+  {
+    statut: "Perdus",
+    nombre: 995,
+    part: "48,3%",
+    description: "Leads non convertis (refus, injoignables, hors cible)",
+    action: "Qualifier les motifs de perte",
+  },
+];
 
 export default function OperationsPage() {
   const [activeView, setActiveView] = useState<ViewType>("leads");
   const [search, setSearch] = useState("");
   const [courtierFilterOps, setCourtierFilterOps] = useState<string>("all");
 
-  const leads = useMemo(() => generateLeadsData(), []);
-  const courtierPerf = useMemo(() => computeCourtierPerformance(), []);
-  const resiliationClients = useMemo(() => generateResiliationRiskClients(), []);
+  const [colId, setColId] = useState(true);
+  const [colDate, setColDate] = useState(true);
+  const [colSource, setColSource] = useState(true);
+  const [colCourtier, setColCourtier] = useState(true);
+  const [colProduit, setColProduit] = useState(true);
+  const [colStatut, setColStatut] = useState(true);
 
-  const filteredLeads = useMemo(() => {
-    let data = leads;
-    if (search) data = data.filter(l => l.id.toLowerCase().includes(search.toLowerCase()) || l.courtier.toLowerCase().includes(search.toLowerCase()) || l.source.toLowerCase().includes(search.toLowerCase()));
-    if (courtierFilterOps !== "all") data = data.filter(l => l.courtier === courtierFilterOps);
-    return data;
-  }, [leads, search, courtierFilterOps]);
+  const courtierPerf = useMemo(() => computeCourtierPerformance(), []);
+  const contratsARisque = useMemo(() => getContratsARisque(), []);
+
+  const filteredCourtiers = useMemo(() => {
+    if (courtierFilterOps === "all") return courtierPerf;
+    return courtierPerf.filter((c) => c.nom === courtierFilterOps);
+  }, [courtierPerf, courtierFilterOps]);
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Operations</h1>
-          <p className="text-sm text-muted-foreground">Table de pilotage centralisee avec vues configurables</p>
+          <h1 className="text-xl font-semibold tracking-tight">Opérations</h1>
+          <p className="text-sm text-muted-foreground">Table de pilotage centralisée avec vues configurables</p>
         </div>
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-input bg-background px-3 h-7 text-xs font-medium shadow-xs hover:bg-accent hover:text-accent-foreground">
+              <Columns3 className="size-3" /> Colonnes
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuCheckboxItem checked={colId} onCheckedChange={(v) => setColId(v)}>ID</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={colDate} onCheckedChange={(v) => setColDate(v)}>Date</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={colSource} onCheckedChange={(v) => setColSource(v)}>Source</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={colCourtier} onCheckedChange={(v) => setColCourtier(v)}>Courtier</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={colProduit} onCheckedChange={(v) => setColProduit(v)}>Produit</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem checked={colStatut} onCheckedChange={(v) => setColStatut(v)}>Statut</DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1 rounded-full">
             <Download className="size-3" /> Exporter
           </Button>
@@ -128,7 +189,7 @@ export default function OperationsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous</SelectItem>
-            {courtierPerf.map(c => (
+            {courtierPerf.map((c) => (
               <SelectItem key={c.nom} value={c.nom}>{c.nom}</SelectItem>
             ))}
           </SelectContent>
@@ -143,38 +204,23 @@ export default function OperationsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs">ID</TableHead>
-                    <TableHead className="text-xs">Date</TableHead>
-                    <TableHead className="text-xs">Source</TableHead>
                     <TableHead className="text-xs">Courtier</TableHead>
-                    <TableHead className="text-xs">Produit</TableHead>
-                    <TableHead className="text-xs">Delai</TableHead>
-                    <TableHead className="text-xs">SLA</TableHead>
-                    <TableHead className="text-xs">Relances</TableHead>
+                    <TableHead className="text-xs">Leads traités</TableHead>
+                    <TableHead className="text-xs">Délai médian</TableHead>
+                    <TableHead className="text-xs">Conversion</TableHead>
+                    <TableHead className="text-xs">Source dominante</TableHead>
                     <TableHead className="text-xs">Statut</TableHead>
-                    <TableHead className="text-xs">Priorite</TableHead>
-                    <TableHead className="text-xs">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLeads.map((l) => (
-                    <TableRow key={l.id} className="hover:bg-accent">
-                      <TableCell className="text-xs font-mono">{l.id}</TableCell>
-                      <TableCell className="text-xs">{l.date}</TableCell>
-                      <TableCell className="text-xs">{l.source}</TableCell>
-                      <TableCell className="text-xs font-medium">{l.courtier}</TableCell>
-                      <TableCell className="text-xs">{l.produit}</TableCell>
-                      <TableCell className="text-xs">{l.delaiContact}h</TableCell>
-                      <TableCell>{statusBadge(l.statutSLA)}</TableCell>
-                      <TableCell className="text-xs">{l.relances}</TableCell>
-                      <TableCell><Badge variant="secondary" className="text-[10px]">{l.statut}</Badge></TableCell>
-                      <TableCell>{statusBadge(l.priorite === "critique" ? "critique" : l.priorite === "haute" ? "proche" : "ok")}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="xs" variant="ghost" className="h-5 w-5 p-0"><Phone className="size-3" /></Button>
-                          <Button size="xs" variant="ghost" className="h-5 w-5 p-0"><Mail className="size-3" /></Button>
-                        </div>
-                      </TableCell>
+                  {filteredCourtiers.map((c) => (
+                    <TableRow key={c.nom} className="hover:bg-accent">
+                      <TableCell className="text-xs font-medium">{c.nom}</TableCell>
+                      <TableCell className="text-xs">{c.leadsTraites}</TableCell>
+                      <TableCell className="text-xs">{c.delaiMedian}h</TableCell>
+                      <TableCell className="text-xs">{c.tauxConversion}%</TableCell>
+                      <TableCell className="text-xs">{c.sourceDominante}</TableCell>
+                      <TableCell>{statusBadge(c.statut)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -187,20 +233,36 @@ export default function OperationsPage() {
                   <TableRow>
                     <TableHead className="text-xs">Courtier</TableHead>
                     <TableHead className="text-xs">Contrats</TableHead>
-                    <TableHead className="text-xs">Leads traites</TableHead>
-                    <TableHead className="text-xs">Hors SLA</TableHead>
-                    <TableHead className="text-xs">Delai median</TableHead>
-                    <TableHead className="text-xs">Conversion</TableHead>
+                    <TableHead className="text-xs">Leads traités</TableHead>
                     <TableHead className="text-xs">
                       <div className="flex items-center gap-1">
-                        Conv. ajustee
+                        Hors SLA
                         <Tooltip>
                           <TooltipTrigger><Info className="size-3 text-muted-foreground" /></TooltipTrigger>
-                          <TooltipContent className="text-xs max-w-xs">Conversion ajustee par la qualite de la source. Les recommandations convertissent naturellement 4x mieux que les comparateurs.</TooltipContent>
+                          <TooltipContent className="text-xs max-w-xs">Nombre de leads dont le délai de premier contact dépasse 4h (source : dataset Excel)</TooltipContent>
                         </Tooltip>
                       </div>
                     </TableHead>
-                    <TableHead className="text-xs">Relances dues</TableHead>
+                    <TableHead className="text-xs">Délai médian</TableHead>
+                    <TableHead className="text-xs">Conversion</TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1">
+                        Conv. ajustée
+                        <Tooltip>
+                          <TooltipTrigger><Info className="size-3 text-muted-foreground" /></TooltipTrigger>
+                          <TooltipContent className="text-xs max-w-xs">Conversion ajustée par la qualité de la source. Les recommandations convertissent naturellement 4x mieux que les comparateurs.</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-xs">
+                      <div className="flex items-center gap-1">
+                        Relances dues
+                        <Tooltip>
+                          <TooltipTrigger><Info className="size-3 text-muted-foreground" /></TooltipTrigger>
+                          <TooltipContent className="text-xs max-w-xs">Leads au statut &laquo; En cours &raquo; n&apos;ayant reçu aucune relance (source : dataset Excel)</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TableHead>
                     <TableHead className="text-xs">CRM</TableHead>
                     <TableHead className="text-xs">Churn</TableHead>
                     <TableHead className="text-xs">Charge</TableHead>
@@ -208,17 +270,29 @@ export default function OperationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {courtierPerf.map((c) => (
+                  {filteredCourtiers.map((c) => (
                     <TableRow key={c.nom} className="hover:bg-accent">
                       <TableCell className="text-xs font-medium">{c.nom}</TableCell>
                       <TableCell className="text-xs">{c.contrats}</TableCell>
                       <TableCell className="text-xs">{c.leadsTraites}</TableCell>
-                      <TableCell className="text-xs">{c.leadsHorsSLA > 50 ? <span className="text-destructive font-medium">{c.leadsHorsSLA}</span> : c.leadsHorsSLA}</TableCell>
+                      <TableCell className="text-xs">
+                        {c.horsSLA > 50
+                          ? <span className="text-destructive font-medium">{c.horsSLA}</span>
+                          : c.horsSLA}
+                      </TableCell>
                       <TableCell className="text-xs">{c.delaiMedian}h</TableCell>
                       <TableCell className="text-xs">{c.tauxConversion}%</TableCell>
                       <TableCell className="text-xs">{c.conversionAjustee}%</TableCell>
-                      <TableCell className="text-xs">{c.relancesDues > 30 ? <span className="text-destructive font-medium">{c.relancesDues}</span> : c.relancesDues}</TableCell>
-                      <TableCell className="text-xs">{c.crmSaisie === 0 ? <Badge variant="destructive" className="text-[10px]">0%</Badge> : <span className="text-brand-green">{c.crmSaisie}%</span>}</TableCell>
+                      <TableCell className="text-xs">
+                        {c.relancesDues > 30
+                          ? <span className="text-destructive font-medium">{c.relancesDues}</span>
+                          : c.relancesDues}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {c.crmSaisie === 0
+                          ? <Badge variant="destructive" className="text-[10px]">0%</Badge>
+                          : <span className="text-brand-green">{c.crmSaisie}%</span>}
+                      </TableCell>
                       <TableCell className="text-xs">{c.churn}%</TableCell>
                       <TableCell><Badge variant="secondary" className="text-[10px]">{c.charge}</Badge></TableCell>
                       <TableCell>{statusBadge(c.statut === "critique" ? "critique" : c.statut === "alerte" ? "alerte" : "bon")}</TableCell>
@@ -232,32 +306,44 @@ export default function OperationsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="text-xs">ID</TableHead>
                     <TableHead className="text-xs">Client</TableHead>
                     <TableHead className="text-xs">Courtier</TableHead>
-                    <TableHead className="text-xs">Echeance</TableHead>
-                    <TableHead className="text-xs">Motif probable</TableHead>
-                    <TableHead className="text-xs">Commission (EUR/an)</TableHead>
+                    <TableHead className="text-xs">Produit</TableHead>
+                    <TableHead className="text-xs">Commission (€/an)</TableHead>
                     <TableHead className="text-xs">Risque</TableHead>
-                    <TableHead className="text-xs">Action recommandee</TableHead>
-                    <TableHead className="text-xs">Contacte</TableHead>
-                    <TableHead className="text-xs">Action</TableHead>
+                    <TableHead className="text-xs">Action recommandée</TableHead>
+                    <TableHead className="text-xs">Contacté</TableHead>
+                    <TableHead className="text-xs">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {resiliationClients.map((c) => (
+                  {contratsARisque.map((c) => (
                     <TableRow key={c.id} className="hover:bg-accent">
-                      <TableCell className="text-xs font-medium">{c.client}</TableCell>
+                      <TableCell className="text-xs font-mono">{c.id}</TableCell>
+                      <TableCell className="text-xs font-medium">{c.prenom} {c.nom}</TableCell>
                       <TableCell className="text-xs">{c.courtier}</TableCell>
-                      <TableCell className="text-xs font-mono">{c.echeance}</TableCell>
-                      <TableCell className="text-xs">{c.motifProbable}</TableCell>
-                      <TableCell className="text-xs">{c.commission} EUR</TableCell>
+                      <TableCell className="text-xs">{c.produit}</TableCell>
+                      <TableCell className="text-xs">{c.commission} €</TableCell>
                       <TableCell>{statusBadge(c.risque)}</TableCell>
                       <TableCell className="text-xs">{c.actionRecommandee}</TableCell>
-                      <TableCell>{c.contacte ? <Badge className="text-[10px] bg-brand-green/10 text-brand-green">Oui</Badge> : <Badge variant="destructive" className="text-[10px]">Non</Badge>}</TableCell>
                       <TableCell>
-                        <Button size="xs" variant="outline" className="h-5 text-[10px] px-2 rounded-full">
-                          <Phone className="size-3 mr-1" /> Appeler
-                        </Button>
+                        {c.contacte
+                          ? <Badge className="text-[10px] bg-brand-green/10 text-brand-green">Oui</Badge>
+                          : <Badge variant="destructive" className="text-[10px]">Non</Badge>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button size="sm" variant="outline" className="h-5 text-[10px] px-2 rounded-full">
+                            <Phone className="size-3 mr-1" /> Appeler
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-5 text-[10px] px-2 rounded-full">
+                            <CalendarClock className="size-3 mr-1" /> Planifier relance
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-5 text-[10px] px-2 rounded-full">
+                            <ClipboardList className="size-3 mr-1" /> Qualifier motif
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -274,29 +360,43 @@ export default function OperationsPage() {
                     <TableHead className="text-xs">Conversion</TableHead>
                     <TableHead className="text-xs">CPL moyen</TableHead>
                     <TableHead className="text-xs">Budget annuel</TableHead>
-                    <TableHead className="text-xs">Contrats signes</TableHead>
+                    <TableHead className="text-xs">Contrats signés</TableHead>
                     <TableHead className="text-xs">CAC</TableHead>
-                    <TableHead className="text-xs">Gain net estime</TableHead>
+                    <TableHead className="text-xs">Gain net estimé</TableHead>
                     <TableHead className="text-xs">Recommandation</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {canaux.map((c) => {
-                    const contrats = Math.round(c.volume * c.tauxConversion / 100);
-                    const cac = contrats > 0 && c.budget > 0 ? Math.round(c.budget / contrats) : 0;
-                    const gainNet = contrats * 150 - c.budget;
-                    const reco = c.canal === "Recommandations" ? "Developper ++" : cac > 300 ? "Reduire budget" : "Maintenir";
+                    const cac = c.convertis > 0 && c.budget > 0 ? Math.round(c.budget / c.convertis) : 0;
+                    const gainNet = c.convertis * 150 - c.budget;
+                    const reco = c.canal === "Recommandations"
+                      ? "Développer ++"
+                      : cac > 300
+                        ? "Réduire budget"
+                        : "Maintenir";
                     return (
                       <TableRow key={c.canal} className="hover:bg-accent">
                         <TableCell className="text-xs font-medium">{c.canal}</TableCell>
                         <TableCell className="text-xs">{c.volume}</TableCell>
                         <TableCell className="text-xs">{c.tauxConversion}%</TableCell>
-                        <TableCell className="text-xs">{c.cac ? `${c.cac} EUR` : "0 EUR"}</TableCell>
-                        <TableCell className="text-xs">{c.budget > 0 ? `${c.budget.toLocaleString("fr-FR")} EUR` : "0 EUR"}</TableCell>
-                        <TableCell className="text-xs">{contrats}</TableCell>
-                        <TableCell className="text-xs">{cac > 0 ? `${cac} EUR` : "0 EUR"}</TableCell>
-                        <TableCell className="text-xs">{gainNet > 0 ? <span className="text-brand-green">+{gainNet.toLocaleString("fr-FR")} EUR</span> : <span className="text-destructive">{gainNet.toLocaleString("fr-FR")} EUR</span>}</TableCell>
-                        <TableCell><Badge variant={reco.includes("Reduire") ? "destructive" : reco.includes("Developper") ? "default" : "secondary"} className="text-[10px]">{reco}</Badge></TableCell>
+                        <TableCell className="text-xs">{c.cplMoyen ? `${c.cplMoyen} €` : "0 €"}</TableCell>
+                        <TableCell className="text-xs">{c.budget > 0 ? `${c.budget.toLocaleString("fr-FR")} €` : "0 €"}</TableCell>
+                        <TableCell className="text-xs">{c.convertis}</TableCell>
+                        <TableCell className="text-xs">{cac > 0 ? `${cac} €` : "0 €"}</TableCell>
+                        <TableCell className="text-xs">
+                          {gainNet > 0
+                            ? <span className="text-brand-green">+{gainNet.toLocaleString("fr-FR")} €</span>
+                            : <span className="text-destructive">{gainNet.toLocaleString("fr-FR")} €</span>}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={reco.includes("Réduire") ? "destructive" : reco.includes("Développer") ? "default" : "secondary"}
+                            className="text-[10px]"
+                          >
+                            {reco}
+                          </Badge>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -312,13 +412,13 @@ export default function OperationsPage() {
                     <TableHead className="text-xs">Contrats total</TableHead>
                     <TableHead className="text-xs">Dans CRM</TableHead>
                     <TableHead className="text-xs">Hors CRM</TableHead>
-                    <TableHead className="text-xs">Commission a risque</TableHead>
-                    <TableHead className="text-xs">Priorite migration</TableHead>
+                    <TableHead className="text-xs">Commission à risque</TableHead>
+                    <TableHead className="text-xs">Priorité migration</TableHead>
                     <TableHead className="text-xs">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {courtierPerf.map((c) => {
+                  {filteredCourtiers.map((c) => {
                     const horsCRM = Math.round(c.contrats * (1 - c.crmSaisie / 100));
                     const commissionRisque = Math.round(c.commission * (1 - c.crmSaisie / 100));
                     return (
@@ -326,11 +426,23 @@ export default function OperationsPage() {
                         <TableCell className="text-xs font-medium">{c.nom}</TableCell>
                         <TableCell className="text-xs">{c.contrats}</TableCell>
                         <TableCell className="text-xs text-brand-green">{c.contrats - horsCRM}</TableCell>
-                        <TableCell className="text-xs">{horsCRM > 0 ? <span className="text-destructive font-medium">{horsCRM}</span> : "0"}</TableCell>
-                        <TableCell className="text-xs">{commissionRisque > 0 ? <span className="text-destructive">{commissionRisque.toLocaleString("fr-FR")} EUR</span> : "0 EUR"}</TableCell>
-                        <TableCell>{horsCRM > 0 ? <Badge variant="destructive" className="text-[10px]">Urgente</Badge> : <Badge className="text-[10px] bg-brand-green/10 text-brand-green">Complete</Badge>}</TableCell>
+                        <TableCell className="text-xs">
+                          {horsCRM > 0
+                            ? <span className="text-destructive font-medium">{horsCRM}</span>
+                            : "0"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {commissionRisque > 0
+                            ? <span className="text-destructive">{commissionRisque.toLocaleString("fr-FR")} €</span>
+                            : "0 €"}
+                        </TableCell>
                         <TableCell>
-                          {horsCRM > 0 && <Button size="xs" variant="outline" className="h-5 text-[10px] px-2 rounded-full">Migrer</Button>}
+                          {horsCRM > 0
+                            ? <Badge variant="destructive" className="text-[10px]">Urgente</Badge>
+                            : <Badge className="text-[10px] bg-brand-green/10 text-brand-green">Complète</Badge>}
+                        </TableCell>
+                        <TableCell>
+                          {horsCRM > 0 && <Button size="sm" variant="outline" className="h-5 text-[10px] px-2 rounded-full">Migrer</Button>}
                         </TableCell>
                       </TableRow>
                     );
@@ -343,34 +455,23 @@ export default function OperationsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs">Etape</TableHead>
-                    <TableHead className="text-xs">Dossiers</TableHead>
+                    <TableHead className="text-xs">Statut</TableHead>
+                    <TableHead className="text-xs">Nombre</TableHead>
                     <TableHead className="text-xs">Part du total</TableHead>
-                    <TableHead className="text-xs">Taux de passage</TableHead>
-                    <TableHead className="text-xs">Deperdition</TableHead>
-                    <TableHead className="text-xs">Alerte</TableHead>
-                    <TableHead className="text-xs">Action recommandee</TableHead>
+                    <TableHead className="text-xs">Description</TableHead>
+                    <TableHead className="text-xs">Action recommandée</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {funnel.map((f, i) => {
-                    const total = funnel[0].valeur;
-                    const tauxPassage = i > 0 ? Math.round((f.valeur / funnel[i - 1].valeur) * 100) : 100;
-                    const deperdition = i > 0 ? funnel[i - 1].valeur - f.valeur : 0;
-                    const alerte = tauxPassage < 50 && i > 0;
-                    const action = i === 1 ? "Augmenter le taux de relance" : i === 2 ? "Accelerer les prises de decision" : i === 3 ? "Reduire le delai de contact" : "Maintenir le flux";
-                    return (
-                      <TableRow key={f.etape} className="hover:bg-accent">
-                        <TableCell className="text-xs font-medium">{f.etape}</TableCell>
-                        <TableCell className="text-xs">{f.valeur}</TableCell>
-                        <TableCell className="text-xs">{Math.round((f.valeur / total) * 100)}%</TableCell>
-                        <TableCell className="text-xs">{tauxPassage}%</TableCell>
-                        <TableCell className="text-xs">{deperdition > 0 ? <span className="text-destructive">-{deperdition}</span> : "—"}</TableCell>
-                        <TableCell>{alerte ? <Badge variant="destructive" className="text-[10px]">Deperdition elevee</Badge> : <Badge variant="secondary" className="text-[10px]">Normal</Badge>}</TableCell>
-                        <TableCell className="text-xs">{action}</TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  {pipelineData.map((row) => (
+                    <TableRow key={row.statut} className="hover:bg-accent">
+                      <TableCell className="text-xs font-medium">{row.statut}</TableCell>
+                      <TableCell className="text-xs">{row.nombre.toLocaleString("fr-FR")}</TableCell>
+                      <TableCell className="text-xs">{row.part}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{row.description}</TableCell>
+                      <TableCell className="text-xs">{row.action}</TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             )}
