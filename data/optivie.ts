@@ -12,11 +12,11 @@ export const kpiGlobal = {
 };
 
 export const courtiers = [
-  { nom: "Mehdi", contrats: 504, crmSaisie: 0, delaiMedian: 5, tauxConversion: 57.1, churn: 18.1, statut: "critique" },
-  { nom: "Sonia", contrats: 210, crmSaisie: 100, delaiMedian: 8, tauxConversion: 39.6, churn: null, statut: "bon" },
-  { nom: "Axel", contrats: 198, crmSaisie: 100, delaiMedian: 15, tauxConversion: 14.0, churn: null, statut: "alerte" },
-  { nom: "Clara", contrats: 176, crmSaisie: 100, delaiMedian: 23, tauxConversion: 8.0, churn: null, statut: "alerte" },
-  { nom: "Romain", contrats: 112, crmSaisie: 100, delaiMedian: 31, tauxConversion: 10.9, churn: null, statut: "alerte" },
+  { nom: "Mehdi", contrats: 504, crmSaisie: 0, delaiMedian: 5, tauxConversion: 57.1, churn: 18.1, leadsTraites: 266, commission: 78068, partPortefeuille: 42, sourceDominante: "Recommandation", risque: "Portefeuille opaque — 0% CRM", statut: "critique" },
+  { nom: "Sonia", contrats: 280, crmSaisie: 100, delaiMedian: 8, tauxConversion: 39.6, churn: 15.4, leadsTraites: 207, commission: 42540, partPortefeuille: 23.3, sourceDominante: "Recommandation", risque: "Surcharge — refuse des leads", statut: "bon" },
+  { nom: "Axel", contrats: 190, crmSaisie: 100, delaiMedian: 15, tauxConversion: 14.0, churn: 22.1, leadsTraites: 637, commission: 28665, partPortefeuille: 15.8, sourceDominante: "Comparateurs", risque: "Leads faible qualité", statut: "alerte" },
+  { nom: "Clara", contrats: 140, crmSaisie: 100, delaiMedian: 23, tauxConversion: 8.0, churn: 22.1, leadsTraites: 387, commission: 20138, partPortefeuille: 11.7, sourceDominante: "Comparateurs", risque: "Leads faible qualité", statut: "alerte" },
+  { nom: "Romain", contrats: 86, crmSaisie: 100, delaiMedian: 31, tauxConversion: 10.9, churn: 10.5, leadsTraites: 562, commission: 12759, partPortefeuille: 7.2, sourceDominante: "Comparateurs", risque: "Faible volume", statut: "alerte" },
 ] as const;
 
 export const conversionDelai = [
@@ -34,28 +34,30 @@ export const impactRelances = [
 ];
 
 export const canaux = [
-  { canal: "Comparateurs", volume: 1140, tauxConversion: 10.6, cac: 353, budget: 42730 },
+  { canal: "Assurland", volume: 611, tauxConversion: 11.1, cac: 37.8, budget: 21840 },
+  { canal: "LesFurets", volume: 529, tauxConversion: 10.0, cac: 34.1, budget: 20890 },
   { canal: "Recommandations", volume: 617, tauxConversion: 42.6, cac: 0, budget: 0 },
   { canal: "Prospection directe", volume: 302, tauxConversion: 10.3, cac: null, budget: 0 },
 ];
 
 export const evolutionCPL = [
-  { mois: "Jan", assurland: 33, lesfurets: 30 },
-  { mois: "Fév", assurland: 34.2, lesfurets: 31.1 },
-  { mois: "Mar", assurland: 35.5, lesfurets: 32.3 },
-  { mois: "Avr", assurland: 36.8, lesfurets: 33.4 },
-  { mois: "Mai", assurland: 37.9, lesfurets: 34.5 },
-  { mois: "Jun", assurland: 38.6, lesfurets: 35.2 },
-  { mois: "Jul", assurland: 39.4, lesfurets: 35.9 },
-  { mois: "Aoû", assurland: 40.1, lesfurets: 36.7 },
-  { mois: "Sep", assurland: 40.9, lesfurets: 37.4 },
-  { mois: "Oct", assurland: 41.8, lesfurets: 38.1 },
-  { mois: "Nov", assurland: 42.5, lesfurets: 38.8 },
+  { mois: "Jan", assurland: 33.0, lesfurets: 30.0 },
+  { mois: "Fév", assurland: 33.8, lesfurets: 30.7 },
+  { mois: "Mar", assurland: 34.7, lesfurets: 31.5 },
+  { mois: "Avr", assurland: 35.5, lesfurets: 32.3 },
+  { mois: "Mai", assurland: 36.4, lesfurets: 33.1 },
+  { mois: "Jun", assurland: 37.3, lesfurets: 33.9 },
+  { mois: "Jul", assurland: 38.3, lesfurets: 34.8 },
+  { mois: "Aoû", assurland: 39.2, lesfurets: 35.7 },
+  { mois: "Sep", assurland: 40.2, lesfurets: 36.6 },
+  { mois: "Oct", assurland: 41.2, lesfurets: 37.5 },
+  { mois: "Nov", assurland: 42.2, lesfurets: 38.4 },
   { mois: "Déc", assurland: 43.3, lesfurets: 39.4 },
 ];
 
 export const motifsResiliations = [
-  { motif: "Non renseigné", nombre: 105, evitable: false },
+  { motif: "Non renseigné", nombre: 72, evitable: false },
+  { motif: "Non précisé", nombre: 33, evitable: false },
   { motif: "Hausse de prime", nombre: 35, evitable: true },
   { motif: "Offre concurrente", nombre: 27, evitable: true },
   { motif: "Changement de situation", nombre: 24, evitable: false },
@@ -63,11 +65,19 @@ export const motifsResiliations = [
   { motif: "Impayé automatique", nombre: 6, evitable: false },
 ];
 
+export const resiliationsParCourtier = [
+  { courtier: "Mehdi", resiliations: 91, taux: 18.1 },
+  { courtier: "Sonia", resiliations: 43, taux: 15.4 },
+  { courtier: "Axel", resiliations: 42, taux: 22.1 },
+  { courtier: "Clara", resiliations: 31, taux: 22.1 },
+  { courtier: "Romain", resiliations: 9, taux: 10.5 },
+];
+
 export const funnel = [
-  { etape: "Leads reçus", valeur: 2059, source: "Diagnostic" },
+  { etape: "Leads reçus", valeur: 2059, source: "Dataset" },
   { etape: "Avec ≥1 relance", valeur: 563, source: "Dataset relances" },
-  { etape: "Décisions en cours", valeur: 649, source: "31,5% × 2059" },
-  { etape: "Convertis", valeur: 416, source: "20,2% × 2059" },
+  { etape: "Décisions en cours", valeur: 649, source: "Statut 'En cours'" },
+  { etape: "Convertis", valeur: 415, source: "Statut 'Converti'" },
 ];
 
 export const scenarios = [

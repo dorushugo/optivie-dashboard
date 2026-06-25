@@ -313,7 +313,7 @@ export default function DashboardPage() {
                     <TableCell className="text-right">{c.delaiMedian}h</TableCell>
                     <TableCell className="text-right">{c.tauxConversion}%</TableCell>
                     <TableCell className="text-right">
-                      {c.churn !== null ? `${c.churn}%` : "—"}
+                      {c.churn}%
                     </TableCell>
                     <TableCell className="text-center">
                       {c.delaiMedian <= 4 ? (
@@ -344,10 +344,10 @@ export default function DashboardPage() {
       </Card>
 
       {/* Canaux d'acquisition */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {canaux.map((c) => {
           const borderColor =
-            c.canal === "Comparateurs"
+            c.canal === "Assurland" || c.canal === "LesFurets"
               ? "border-l-warning"
               : c.canal === "Recommandations"
               ? "border-l-brand-green"

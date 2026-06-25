@@ -15,6 +15,7 @@ import { kpiGlobal, motifsResiliations } from "@/data/optivie";
 
 const DONUT_COLORS = [
   "hsl(30, 6%, 60%)",
+  "hsl(30, 6%, 75%)",
   "hsl(0, 84%, 60%)",
   "hsl(38, 92%, 50%)",
   "hsl(200, 50%, 50%)",
