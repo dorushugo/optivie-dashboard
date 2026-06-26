@@ -138,7 +138,7 @@ export default function OperationsPage() {
   const moisList = getMoisList();
   const kpis = useMemo(() => computeKPIs(periodFilter), [periodFilter]);
   const pipelineData = useMemo(() => getPipelineData(kpis), [kpis]);
-  const courtierPerf = useMemo(() => computeCourtierPerformance(), []);
+  const courtierPerf = useMemo(() => computeCourtierPerformance(periodFilter), [periodFilter]);
   const contratsARisque = useMemo(() => getContratsARisque(), []);
 
   const filteredCourtiers = useMemo(() => {

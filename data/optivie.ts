@@ -166,6 +166,35 @@ export const funnel = [
   { etape: "Perdus", valeur: 995 },
 ];
 
+export type CourtierMoisData = {
+  courtier: string;
+  mois: string;
+  leadsTraites: number;
+  convertis: number;
+  horsSLA: number;
+  relancesDues: number;
+  delaiMedian: number;
+};
+
+const courtierNames = ["Mehdi", "Sonia", "Axel", "Clara", "Romain"];
+const courtierProportions = { Mehdi: 0.129, Sonia: 0.101, Axel: 0.310, Clara: 0.188, Romain: 0.273 };
+const courtierConvRate = { Mehdi: 0.571, Sonia: 0.396, Axel: 0.14, Clara: 0.08, Romain: 0.109 };
+const courtierHorsSLARate = { Mehdi: 0.56, Sonia: 0.87, Axel: 1.0, Clara: 1.0, Romain: 1.0 };
+const courtierRelanceRate = { Mehdi: 0.038, Sonia: 0.048, Axel: 0.215, Clara: 0.375, Romain: 0.354 };
+const courtierDelai = { Mehdi: 5, Sonia: 8, Axel: 15, Clara: 23, Romain: 31 };
+
+export const courtierParMois: CourtierMoisData[] = donneesMensuelles.flatMap((m) =>
+  courtierNames.map((nom) => {
+    const prop = courtierProportions[nom as keyof typeof courtierProportions];
+    const leadsTraites = Math.round(m.leads * prop);
+    const convertis = Math.round(leadsTraites * courtierConvRate[nom as keyof typeof courtierConvRate]);
+    const horsSLA = Math.round(leadsTraites * courtierHorsSLARate[nom as keyof typeof courtierHorsSLARate]);
+    const relancesDues = Math.round(leadsTraites * courtierRelanceRate[nom as keyof typeof courtierRelanceRate]);
+    const delaiMedian = courtierDelai[nom as keyof typeof courtierDelai];
+    return { courtier: nom, mois: m.mois, leadsTraites, convertis, horsSLA, relancesDues, delaiMedian };
+  })
+);
+
 export const scenarios = [
   {
     nom: "Minimal",

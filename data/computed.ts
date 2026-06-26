@@ -14,6 +14,7 @@ import {
   leadsParMois,
   donneesMensuelles,
   resiliationsParMois,
+  courtierParMois,
 } from "./optivie";
 import type { MoisData } from "./optivie";
 
@@ -282,15 +283,44 @@ export function computePriorityActions(): PriorityAction[] {
   });
 }
 
-export function computeCourtierPerformance() {
-  return rawCourtiers.map((c) => ({
-    ...c,
-    conversionAjustee: c.sourceDominante === "Recommandation"
-      ? Math.round(c.tauxConversion * 0.6 * 10) / 10
-      : c.tauxConversion,
-    charge: c.leadsTraites > 500 ? "Surcharge" : c.leadsTraites > 250 ? "Élevée" : c.leadsTraites > 150 ? "Normale" : "Sous-charge",
-    resiliations: resiliationsParCourtier.find(r => r.courtier === c.nom)?.resiliations ?? 0,
-  }));
+export function computeCourtierPerformance(period: PeriodFilter = "annuel") {
+  const months = getMonthsForPeriod(period);
+  const isAnnual = period === "annuel";
+
+  return rawCourtiers.map((c) => {
+    if (isAnnual) {
+      return {
+        ...c,
+        conversionAjustee: c.sourceDominante === "Recommandation"
+          ? Math.round(c.tauxConversion * 0.6 * 10) / 10
+          : c.tauxConversion,
+        charge: c.leadsTraites > 500 ? "Surcharge" : c.leadsTraites > 250 ? "Élevée" : c.leadsTraites > 150 ? "Normale" : "Sous-charge",
+        resiliations: resiliationsParCourtier.find(r => r.courtier === c.nom)?.resiliations ?? 0,
+      };
+    }
+
+    const monthData = courtierParMois.filter(d => d.courtier === c.nom && months.includes(d.mois));
+    const leadsTraites = monthData.reduce((s, d) => s + d.leadsTraites, 0);
+    const convertis = monthData.reduce((s, d) => s + d.convertis, 0);
+    const horsSLA = monthData.reduce((s, d) => s + d.horsSLA, 0);
+    const relancesDues = monthData.reduce((s, d) => s + d.relancesDues, 0);
+    const delaiMedian = monthData.length > 0 ? monthData[0].delaiMedian : c.delaiMedian;
+    const tauxConversion = leadsTraites > 0 ? Math.round((convertis / leadsTraites) * 1000) / 10 : 0;
+
+    return {
+      ...c,
+      leadsTraites,
+      horsSLA,
+      relancesDues,
+      delaiMedian,
+      tauxConversion,
+      conversionAjustee: c.sourceDominante === "Recommandation"
+        ? Math.round(tauxConversion * 0.6 * 10) / 10
+        : tauxConversion,
+      charge: leadsTraites > (months.length * 42) ? "Surcharge" : leadsTraites > (months.length * 21) ? "Élevée" : leadsTraites > (months.length * 13) ? "Normale" : "Sous-charge",
+      resiliations: Math.round((resiliationsParCourtier.find(r => r.courtier === c.nom)?.resiliations ?? 0) * months.length / 12),
+    };
+  });
 }
 
 export function getContratsARisque() {
@@ -315,4 +345,5 @@ export {
   resiliationsParCourtier,
   leadsParMois,
   donneesMensuelles,
+  courtierParMois,
 };
