@@ -40,6 +40,10 @@ import {
   Columns3,
   CalendarClock,
   ClipboardList,
+  TrendingUp,
+  TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 import {
   computeCourtierPerformance,
@@ -81,36 +85,42 @@ const statusBadge = (status: string) => {
   }
 };
 
-const pipelineData = [
-  {
-    statut: "Leads reçus",
-    nombre: 2059,
-    part: "100%",
-    description: "Total des leads entrants sur la période",
-    action: "Maintenir le flux d'acquisition",
-  },
-  {
-    statut: "En cours",
-    nombre: 649,
-    part: "31,5%",
-    description: "Leads en traitement actif par les courtiers",
-    action: "Accélérer les prises de décision",
-  },
-  {
-    statut: "Convertis",
-    nombre: 415,
-    part: "20,2%",
-    description: "Leads transformés en contrats signés",
-    action: "Développer les recommandations",
-  },
-  {
-    statut: "Perdus",
-    nombre: 995,
-    part: "48,3%",
-    description: "Leads non convertis (refus, injoignables, hors cible)",
-    action: "Qualifier les motifs de perte",
-  },
-];
+function getPipelineData(kpis: ReturnType<typeof computeKPIs>) {
+  const leads = kpis.totalLeads;
+  const enCours = Math.round(leads * 0.315);
+  const convertis = kpis.totalConvertis;
+  const perdus = leads - convertis - enCours;
+  return [
+    {
+      statut: "Leads reçus",
+      nombre: leads,
+      part: "100%",
+      description: "Total des leads entrants sur la période",
+      action: "Maintenir le flux d'acquisition",
+    },
+    {
+      statut: "En cours",
+      nombre: enCours,
+      part: `${leads > 0 ? Math.round((enCours / leads) * 100 * 10) / 10 : 0}%`,
+      description: "Leads en traitement actif par les courtiers",
+      action: "Accélérer les prises de décision",
+    },
+    {
+      statut: "Convertis",
+      nombre: convertis,
+      part: `${kpis.tauxConversion}%`,
+      description: "Leads transformés en contrats signés",
+      action: "Développer les recommandations",
+    },
+    {
+      statut: "Perdus",
+      nombre: perdus > 0 ? perdus : 0,
+      part: `${leads > 0 ? Math.round(((perdus > 0 ? perdus : 0) / leads) * 100 * 10) / 10 : 0}%`,
+      description: "Leads non convertis (refus, injoignables, hors cible)",
+      action: "Qualifier les motifs de perte",
+    },
+  ];
+}
 
 export default function OperationsPage() {
   const [activeView, setActiveView] = useState<ViewType>("leads");
@@ -127,6 +137,7 @@ export default function OperationsPage() {
 
   const moisList = getMoisList();
   const kpis = useMemo(() => computeKPIs(periodFilter), [periodFilter]);
+  const pipelineData = useMemo(() => getPipelineData(kpis), [kpis]);
   const courtierPerf = useMemo(() => computeCourtierPerformance(), []);
   const contratsARisque = useMemo(() => getContratsARisque(), []);
 
@@ -217,6 +228,40 @@ export default function OperationsPage() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Period KPI summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="rounded-lg border bg-card px-3 py-2">
+          <p className="text-[10px] text-muted-foreground uppercase">Leads</p>
+          <p className="text-lg font-bold">{kpis.totalLeads.toLocaleString("fr-FR")}</p>
+          {kpis.evolution.leads !== null && (
+            <p className={`text-[10px] flex items-center gap-0.5 ${kpis.evolution.leads >= 0 ? "text-brand-green" : "text-destructive"}`}>
+              {kpis.evolution.leads >= 0 ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
+              {kpis.evolution.leads > 0 ? "+" : ""}{kpis.evolution.leads}% vs M-1
+            </p>
+          )}
+        </div>
+        <div className="rounded-lg border bg-card px-3 py-2">
+          <p className="text-[10px] text-muted-foreground uppercase">Convertis</p>
+          <p className="text-lg font-bold text-brand-green">{kpis.totalConvertis}</p>
+          <p className="text-[10px] text-muted-foreground">{kpis.tauxConversion}% de conversion</p>
+        </div>
+        <div className="rounded-lg border bg-card px-3 py-2">
+          <p className="text-[10px] text-muted-foreground uppercase">Résiliations</p>
+          <p className="text-lg font-bold text-destructive">{kpis.totalResiliations}</p>
+          {kpis.evolution.resiliations !== null && (
+            <p className={`text-[10px] flex items-center gap-0.5 ${kpis.evolution.resiliations <= 0 ? "text-brand-green" : "text-destructive"}`}>
+              {kpis.evolution.resiliations <= 0 ? <ArrowDownRight className="size-3" /> : <ArrowUpRight className="size-3" />}
+              {kpis.evolution.resiliations > 0 ? "+" : ""}{kpis.evolution.resiliations}% vs M-1
+            </p>
+          )}
+        </div>
+        <div className="rounded-lg border bg-card px-3 py-2">
+          <p className="text-[10px] text-muted-foreground uppercase">Hors SLA</p>
+          <p className="text-lg font-bold text-warning">{kpis.leadsHorsSLA}</p>
+          <p className="text-[10px] text-muted-foreground">{kpis.tauxContactSLA}% dans les 4h</p>
+        </div>
       </div>
 
       {/* Table */}
