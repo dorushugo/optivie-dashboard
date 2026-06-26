@@ -45,7 +45,10 @@ import {
   computeCourtierPerformance,
   getContratsARisque,
   canaux,
+  getMoisList,
+  computeKPIs,
 } from "@/data/computed";
+import type { PeriodFilter } from "@/data/computed";
 
 type ViewType = "leads" | "courtiers" | "resiliations" | "acquisition" | "crm" | "pipeline";
 
@@ -113,6 +116,7 @@ export default function OperationsPage() {
   const [activeView, setActiveView] = useState<ViewType>("leads");
   const [search, setSearch] = useState("");
   const [courtierFilterOps, setCourtierFilterOps] = useState<string>("all");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("annuel");
 
   const [colId, setColId] = useState(true);
   const [colDate, setColDate] = useState(true);
@@ -121,6 +125,8 @@ export default function OperationsPage() {
   const [colProduit, setColProduit] = useState(true);
   const [colStatut, setColStatut] = useState(true);
 
+  const moisList = getMoisList();
+  const kpis = useMemo(() => computeKPIs(periodFilter), [periodFilter]);
   const courtierPerf = useMemo(() => computeCourtierPerformance(), []);
   const contratsARisque = useMemo(() => getContratsARisque(), []);
 
@@ -135,9 +141,26 @@ export default function OperationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Opérations</h1>
-          <p className="text-sm text-muted-foreground">Table de pilotage centralisée avec vues configurables</p>
+          <p className="text-sm text-muted-foreground">
+            {kpis.periodLabel} — {kpis.totalLeads} leads, {kpis.totalConvertis} convertis, {kpis.totalResiliations} résiliations
+          </p>
         </div>
         <div className="flex items-center gap-2">
+          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter((v ?? "annuel") as PeriodFilter)}>
+            <SelectTrigger className="w-[150px] h-8 text-xs">
+              <SelectValue placeholder="Période" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="annuel">Année 2025</SelectItem>
+              <SelectItem value="T1">T1 2025</SelectItem>
+              <SelectItem value="T2">T2 2025</SelectItem>
+              <SelectItem value="T3">T3 2025</SelectItem>
+              <SelectItem value="T4">T4 2025</SelectItem>
+              {moisList.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-full border border-input bg-background px-3 h-7 text-xs font-medium shadow-xs hover:bg-accent hover:text-accent-foreground">
               <Columns3 className="size-3" /> Colonnes

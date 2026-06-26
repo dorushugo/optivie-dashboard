@@ -12,7 +12,10 @@ import {
   scenarios,
   contratsARisque as contratsARisqueData,
   leadsParMois,
+  donneesMensuelles,
+  resiliationsParMois,
 } from "./optivie";
+import type { MoisData } from "./optivie";
 
 export type LeadPriority = "critique" | "haute" | "moyenne" | "basse";
 export type ActionType = "contacter" | "relancer" | "reassigner" | "migrer_crm" | "qualifier_motif" | "retention";
@@ -27,21 +30,75 @@ export type PriorityAction = {
   impact: string;
 };
 
-export function computeKPIs() {
+export type PeriodFilter = "annuel" | string; // "annuel" ou "2025-01", "2025-02", etc.
+
+export function getMoisList(): { value: string; label: string }[] {
+  const moisNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  return donneesMensuelles.map((d) => {
+    const [year, month] = d.mois.split("-");
+    const idx = parseInt(month) - 1;
+    return { value: d.mois, label: `${moisNames[idx]} ${year}` };
+  });
+}
+
+function getMonthsForPeriod(period: PeriodFilter): string[] {
+  if (period === "annuel") {
+    return Object.keys(leadsParMois);
+  }
+  if (period.startsWith("T")) {
+    const quarter = parseInt(period[1]);
+    const startMonth = (quarter - 1) * 3 + 1;
+    return [0, 1, 2].map(i => `2025-${String(startMonth + i).padStart(2, "0")}`);
+  }
+  return [period];
+}
+
+function aggregateMonths(months: string[]): MoisData {
+  const data = donneesMensuelles.filter(d => months.includes(d.mois));
+  if (data.length === 0) {
+    return { mois: "N/A", leads: 0, convertis: 0, tauxConversion: 0, resiliations: 0, horsSLA: 0, relancesDues: 0, contratsNets: 0 };
+  }
+  const leads = data.reduce((s, d) => s + d.leads, 0);
+  const convertis = data.reduce((s, d) => s + d.convertis, 0);
+  const resiliations = data.reduce((s, d) => s + d.resiliations, 0);
+  const horsSLA = data.reduce((s, d) => s + d.horsSLA, 0);
+  const relancesDues = data.reduce((s, d) => s + d.relancesDues, 0);
+  const contratsNets = data.reduce((s, d) => s + d.contratsNets, 0);
+  return {
+    mois: months.length === 1 ? months[0] : "aggregated",
+    leads,
+    convertis,
+    tauxConversion: leads > 0 ? Math.round((convertis / leads) * 1000) / 10 : 0,
+    resiliations,
+    horsSLA,
+    relancesDues,
+    contratsNets,
+  };
+}
+
+export type ComputedKPIs = ReturnType<typeof computeKPIs>;
+
+export function computeKPIs(period: PeriodFilter = "annuel") {
+  const months = getMonthsForPeriod(period);
+  const agg = aggregateMonths(months);
+  const isAnnual = period === "annuel";
+
   const totalContrats = rawCourtiers.reduce((sum, c) => sum + c.contrats, 0);
-  const totalLeads = kpiGlobal.leadsAnnuels;
-  const totalConvertis = 415;
-  const tauxConversion = (totalConvertis / totalLeads) * 100;
 
-  const leadsHorsSLA = rawCourtiers.reduce((sum, c) => sum + c.horsSLA, 0);
-  const tauxContactSLA = ((totalLeads - leadsHorsSLA) / totalLeads) * 100;
+  const totalLeads = agg.leads;
+  const totalConvertis = agg.convertis;
+  const tauxConversion = totalLeads > 0 ? (totalConvertis / totalLeads) * 100 : 0;
 
-  const leadsSansRelance = impactRelances.find((r) => r.relances === "0 relance")?.leads ?? 0;
-  const leadsAvecRelance = totalLeads - leadsSansRelance;
-  const tauxRelance = (leadsAvecRelance / totalLeads) * 100;
+  const horsSLAPeriod = agg.horsSLA;
+  const tauxContactSLA = totalLeads > 0 ? ((totalLeads - horsSLAPeriod) / totalLeads) * 100 : 100;
+
+  const relancesDuesPeriod = agg.relancesDues;
+  const leadsSansRelancePeriod = isAnnual
+    ? (impactRelances.find((r) => r.relances === "0 relance")?.leads ?? 0)
+    : Math.round(totalLeads * 0.73);
+  const tauxRelance = totalLeads > 0 ? ((totalLeads - leadsSansRelancePeriod) / totalLeads) * 100 : 0;
 
   const totalCommissions = rawCourtiers.reduce((sum, c) => sum + c.commission, 0);
-
   const tauxCRM = rawCourtiers.reduce((sum, c) => sum + c.contrats * (c.crmSaisie / 100), 0) / totalContrats * 100;
   const contratsHorsCRM = rawCourtiers.reduce((sum, c) => sum + c.contrats * (1 - c.crmSaisie / 100), 0);
 
@@ -56,28 +113,59 @@ export function computeKPIs() {
   const motifsNonRenseignes = motifsResiliations
     .filter((m) => m.motif === "Non renseigné" || m.motif === "Non précisé")
     .reduce((sum, m) => sum + m.nombre, 0);
-  const totalResiliations = motifsResiliations.reduce((sum, m) => sum + m.nombre, 0);
-  const tauxMotifsRenseignes = ((totalResiliations - motifsNonRenseignes) / totalResiliations) * 100;
+  const totalResiliationsAnnuel = motifsResiliations.reduce((sum, m) => sum + m.nombre, 0);
+  const totalResiliations = agg.resiliations;
+  const tauxMotifsRenseignes = ((totalResiliationsAnnuel - motifsNonRenseignes) / totalResiliationsAnnuel) * 100;
 
   const progressionObjectif = (totalContrats / kpiGlobal.objectifContrats) * 100;
 
-  const totalRelancesDues = rawCourtiers.reduce((sum, c) => sum + c.relancesDues, 0);
+  const resParMois = months
+    .map(m => resiliationsParMois[m])
+    .filter(Boolean);
+  const commissionsPerdues = isAnnual
+    ? kpiGlobal.commissionPerdue
+    : resParMois.reduce((s, r) => s + r.commissionPerdue, 0);
+
+  const croissanceNette = isAnnual
+    ? kpiGlobal.croissanceNette
+    : agg.contratsNets / months.length;
+
+  const leadsMoyenMensuel = isAnnual
+    ? kpiGlobal.leadsMensuels
+    : Math.round(agg.leads / months.length);
+
+  // Évolution vs mois précédent
+  let evolution: { leads: number | null; conversion: number | null; resiliations: number | null } = {
+    leads: null, conversion: null, resiliations: null
+  };
+  if (months.length === 1) {
+    const currentIdx = donneesMensuelles.findIndex(d => d.mois === months[0]);
+    if (currentIdx > 0) {
+      const prev = donneesMensuelles[currentIdx - 1];
+      const curr = donneesMensuelles[currentIdx];
+      evolution = {
+        leads: prev.leads > 0 ? Math.round(((curr.leads - prev.leads) / prev.leads) * 100) : null,
+        conversion: prev.tauxConversion > 0 ? Math.round((curr.tauxConversion - prev.tauxConversion) * 10) / 10 : null,
+        resiliations: prev.resiliations > 0 ? Math.round(((curr.resiliations - prev.resiliations) / prev.resiliations) * 100) : null,
+      };
+    }
+  }
 
   return {
     contratsActifs: totalContrats,
     objectifContrats: kpiGlobal.objectifContrats,
     progressionObjectif: Math.round(progressionObjectif * 10) / 10,
     totalLeads,
-    leadsMoyenMensuel: kpiGlobal.leadsMensuels,
+    leadsMoyenMensuel,
     totalConvertis,
     tauxConversion: Math.round(tauxConversion * 10) / 10,
-    leadsHorsSLA,
+    leadsHorsSLA: horsSLAPeriod,
     tauxContactSLA: Math.round(tauxContactSLA * 10) / 10,
-    leadsSansRelance,
-    leadsAvecRelance,
+    leadsSansRelance: leadsSansRelancePeriod,
+    leadsAvecRelance: totalLeads - leadsSansRelancePeriod,
     tauxRelance: Math.round(tauxRelance * 10) / 10,
     totalCommissions,
-    commissionsPerdue: kpiGlobal.commissionPerdue,
+    commissionsPerdue: commissionsPerdues,
     commissionsARisque: kpiGlobal.commissionsARisque,
     contratsARisque: kpiGlobal.contratsARisque,
     resiliationsEvitables: kpiGlobal.resiliationsEvitables,
@@ -89,12 +177,41 @@ export function computeKPIs() {
     totalResiliations,
     motifsNonRenseignes,
     tauxMotifsRenseignes: Math.round(tauxMotifsRenseignes * 10) / 10,
-    croissanceNette: kpiGlobal.croissanceNette,
-    totalRelancesDues,
+    croissanceNette: Math.round(croissanceNette * 10) / 10,
+    totalRelancesDues: relancesDuesPeriod,
     churnMoyen: Math.round(
       rawCourtiers.reduce((sum, c) => sum + c.churn * c.contrats, 0) / totalContrats * 10
     ) / 10,
+    evolution,
+    periodLabel: getPeriodLabel(period),
+    isAnnual,
   };
+}
+
+function getPeriodLabel(period: PeriodFilter): string {
+  if (period === "annuel") return "Année 2025";
+  const moisNames = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  if (period.startsWith("T")) {
+    return `T${period[1]} 2025`;
+  }
+  const [year, month] = period.split("-");
+  return `${moisNames[parseInt(month) - 1]} ${year}`;
+}
+
+export function getEvolutionData() {
+  return donneesMensuelles.map(d => {
+    const moisNames = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+    const idx = parseInt(d.mois.split("-")[1]) - 1;
+    return {
+      mois: moisNames[idx],
+      moisKey: d.mois,
+      leads: d.leads,
+      convertis: d.convertis,
+      tauxConversion: d.tauxConversion,
+      resiliations: d.resiliations,
+      contratsNets: d.contratsNets,
+    };
+  });
 }
 
 export function computePriorityActions(): PriorityAction[] {
@@ -197,4 +314,5 @@ export {
   scenarios,
   resiliationsParCourtier,
   leadsParMois,
+  donneesMensuelles,
 };

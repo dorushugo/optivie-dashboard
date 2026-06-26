@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -12,22 +12,23 @@ import {
   Cell,
   LineChart,
   Line,
+  Area,
+  AreaChart,
 } from "recharts";
 import {
   Phone,
   Mail,
   RefreshCw,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   TrendingUp,
-  Users,
-  Target,
+  TrendingDown,
   ShieldAlert,
   Database,
-  DollarSign,
   Info,
   ChevronRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,10 @@ import {
   conversionDelai,
   impactRelances,
   evolutionCPL,
+  getMoisList,
+  getEvolutionData,
 } from "@/data/computed";
+import type { PeriodFilter } from "@/data/computed";
 
 const BRAND_GREEN = "hsl(162, 70%, 38%)";
 const WARNING = "hsl(38, 92%, 50%)";
@@ -64,12 +68,13 @@ type KpiTileProps = {
   value: string;
   subtitle?: string;
   trend?: "up" | "down" | "neutral";
+  trendValue?: string;
   status?: "ok" | "warning" | "critical";
   info?: string;
   progress?: { value: number; max: number };
 };
 
-function KpiTile({ title, value, subtitle, trend, status, info, progress }: KpiTileProps) {
+function KpiTile({ title, value, subtitle, trend, trendValue, status, info, progress }: KpiTileProps) {
   const statusColor = status === "critical" ? "text-destructive" : status === "warning" ? "text-warning" : "text-brand-green";
   const statusBg = status === "critical" ? "bg-destructive/5" : status === "warning" ? "bg-warning/5" : "";
 
@@ -89,8 +94,13 @@ function KpiTile({ title, value, subtitle, trend, status, info, progress }: KpiT
         </div>
         <div className="flex items-baseline gap-2">
           <span className={`text-2xl font-bold tracking-tight ${status ? statusColor : ""}`}>{value}</span>
-          {trend && (
-            <TrendingUp className={`size-3.5 ${trend === "up" ? "text-brand-green" : trend === "down" ? "text-destructive rotate-180" : "text-muted-foreground"}`} />
+          {trend && trendValue && (
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+              trend === "up" ? "bg-brand-green/10 text-brand-green" : trend === "down" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+            }`}>
+              {trend === "up" ? <ArrowUpRight className="size-3" /> : trend === "down" ? <ArrowDownRight className="size-3" /> : <Minus className="size-3" />}
+              {trendValue}
+            </span>
           )}
         </div>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
@@ -105,7 +115,7 @@ function KpiTile({ title, value, subtitle, trend, status, info, progress }: KpiT
   );
 }
 
-function CustomChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name?: string }>; label?: string }) {
+function CustomChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name?: string; color?: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-md border bg-popover px-3 py-2 text-xs shadow-md">
@@ -135,11 +145,13 @@ const actionIcons: Record<string, typeof Phone> = {
 
 export default function CockpitPage() {
   const [courtierFilter, setCourtierFilter] = useState<string>("all");
-  const [periodFilter, setPeriodFilter] = useState<string>("mois");
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("annuel");
 
-  const kpis = computeKPIs();
+  const moisList = getMoisList();
+  const kpis = useMemo(() => computeKPIs(periodFilter), [periodFilter]);
   const actions = computePriorityActions();
   const courtierPerf = computeCourtierPerformance();
+  const evolutionData = getEvolutionData();
 
   const filteredActions = courtierFilter === "all"
     ? actions
@@ -152,7 +164,7 @@ export default function CockpitPage() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Cockpit commercial</h1>
           <p className="text-sm text-muted-foreground">
-            Vue opérationnelle du {new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+            {kpis.periodLabel} — données calculées dynamiquement depuis le dataset
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -167,15 +179,19 @@ export default function CockpitPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v ?? "mois")}>
-            <SelectTrigger className="w-[120px] h-8 text-xs">
+          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter((v ?? "annuel") as PeriodFilter)}>
+            <SelectTrigger className="w-[150px] h-8 text-xs">
               <SelectValue placeholder="Période" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="jour">Aujourd&apos;hui</SelectItem>
-              <SelectItem value="semaine">Cette semaine</SelectItem>
-              <SelectItem value="mois">Ce mois</SelectItem>
-              <SelectItem value="annuel">Annuel</SelectItem>
+              <SelectItem value="annuel">Année 2025 (global)</SelectItem>
+              <SelectItem value="T1">T1 2025</SelectItem>
+              <SelectItem value="T2">T2 2025</SelectItem>
+              <SelectItem value="T3">T3 2025</SelectItem>
+              <SelectItem value="T4">T4 2025</SelectItem>
+              {moisList.map(m => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -190,68 +206,103 @@ export default function CockpitPage() {
           info="Nombre de contrats en portefeuille. Objectif : 1 500 sous 18 mois."
         />
         <KpiTile
+          title={kpis.isAnnual ? "Leads reçus" : "Leads du mois"}
+          value={kpis.totalLeads.toLocaleString("fr-FR")}
+          subtitle={kpis.isAnnual ? `Moyenne : ${kpis.leadsMoyenMensuel}/mois` : undefined}
+          trend={kpis.evolution.leads !== null ? (kpis.evolution.leads > 0 ? "up" : kpis.evolution.leads < 0 ? "down" : "neutral") : undefined}
+          trendValue={kpis.evolution.leads !== null ? `${kpis.evolution.leads > 0 ? "+" : ""}${kpis.evolution.leads}% vs M-1` : undefined}
+          info="Nombre de leads reçus sur la période sélectionnée. Source : dataset Excel (Date lead)."
+        />
+        <KpiTile
           title="Taux de conversion"
           value={`${kpis.tauxConversion}%`}
           subtitle={`${kpis.totalConvertis} convertis / ${kpis.totalLeads} leads`}
           status="critical"
-          info="Part des leads transformés en contrats signés. Cible : 32%."
+          trend={kpis.evolution.conversion !== null ? (kpis.evolution.conversion > 0 ? "up" : kpis.evolution.conversion < 0 ? "down" : "neutral") : undefined}
+          trendValue={kpis.evolution.conversion !== null ? `${kpis.evolution.conversion > 0 ? "+" : ""}${kpis.evolution.conversion} pts` : undefined}
+          info="Part des leads transformés en contrats signés sur la période. Cible : 32%."
         />
         <KpiTile
           title="Contact sous SLA"
           value={`${kpis.tauxContactSLA}%`}
           subtitle={`${kpis.leadsHorsSLA} leads hors SLA (>4h)`}
           status="critical"
-          info="Part des leads contactés en moins de 4h après réception. Au-delà, la conversion chute de 50% à 10%."
+          info="Part des leads contactés en moins de 4h. Au-delà, la conversion chute de 50% à 10%."
         />
         <KpiTile
           title="Taux de relance"
           value={`${kpis.tauxRelance}%`}
           subtitle={`${kpis.leadsSansRelance} leads sans relance`}
           status="critical"
-          info="Part des leads ayant reçu au moins 1 relance. 2 relances multiplient la conversion par 2,6."
+          info="Part des leads ayant reçu au moins 1 relance. 2 relances × 2,6 la conversion."
         />
         <KpiTile
           title="Saisie CRM"
           value={`${kpis.tauxCRM}%`}
           subtitle={`${kpis.contratsHorsCRM} contrats hors CRM`}
           status={kpis.tauxCRM < 80 ? "critical" : kpis.tauxCRM < 95 ? "warning" : "ok"}
-          info="Part des contrats saisis dans le CRM. Les contrats hors CRM représentent un risque en cas de départ du courtier."
+          info="Part des contrats saisis dans le CRM. Risque majeur en cas de départ du courtier."
         />
         <KpiTile
-          title="Commissions perdues"
-          value={`${kpis.commissionsPerdue.toLocaleString("fr-FR")} €`}
-          subtitle={`${kpis.totalResiliations} résiliations`}
+          title="Résiliations"
+          value={kpis.totalResiliations.toString()}
+          subtitle={`${kpis.commissionsPerdue.toLocaleString("fr-FR")} € perdus`}
           status="critical"
-          info="Total des commissions récurrentes perdues suite à des résiliations non anticipées en 2025."
+          trend={kpis.evolution.resiliations !== null ? (kpis.evolution.resiliations > 0 ? "down" : "up") : undefined}
+          trendValue={kpis.evolution.resiliations !== null ? `${kpis.evolution.resiliations > 0 ? "+" : ""}${kpis.evolution.resiliations}% vs M-1` : undefined}
+          info="Résiliations sur la période. Les résiliations en hausse sont signalées en rouge."
         />
         <KpiTile
           title="Commissions à risque"
           value={`${kpis.commissionsARisque.toLocaleString("fr-FR")} €`}
           subtitle={`${kpis.contratsARisque} contrats à risque`}
           status="warning"
-          info="Somme des commissions récurrentes des contrats ayant le statut 'À risque' dans le portefeuille actuel."
+          info="Somme des commissions récurrentes des contrats statut 'À risque' (portefeuille actuel)."
         />
         <KpiTile
           title="CAC comparateurs"
           value={`${kpis.cacComparateurs} €`}
           subtitle={`Budget : ${kpis.budgetComparateurs.toLocaleString("fr-FR")} €/an`}
           status="warning"
-          info="Coût d'acquisition par contrat signé via les comparateurs (budget total / contrats signés). Les recommandations convertissent à 42,6% pour 0 €."
-        />
-        <KpiTile
-          title="Leads/mois (moyenne)"
-          value={kpis.leadsMoyenMensuel.toString()}
-          trend="neutral"
-          info="Moyenne mensuelle calculée sur 2025 (2 059 leads / 12 mois). Varie de 125 à 225 selon le mois."
+          info="Coût d'acquisition par contrat signé via comparateurs. Les recommandations convertissent à 42,6% pour 0 €."
         />
         <KpiTile
           title="Croissance nette"
           value={`+${kpis.croissanceNette}/mois`}
           subtitle="Contrats nets (signés − résiliés)"
           trend="up"
-          info="Contrats nets gagnés par mois : 415 convertis − 216 résiliations = 199/an soit 16,6/mois."
+          info={kpis.isAnnual ? "415 convertis − 216 résiliations = 199/an soit 16,6/mois." : "Contrats nets gagnés sur la période sélectionnée."}
         />
       </div>
+
+      {/* Évolution mensuelle */}
+      <Card className="rounded-lg border bg-card shadow-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-semibold">Évolution mensuelle 2025</CardTitle>
+              <p className="text-[10px] text-muted-foreground">Leads, conversions et résiliations par mois (source : dataset)</p>
+            </div>
+            <Tooltip>
+              <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
+              <TooltipContent className="max-w-xs text-xs">Données calculées depuis les colonnes Date lead, Date souscription et Date résiliation du dataset Excel.</TooltipContent>
+            </Tooltip>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={evolutionData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(30, 10%, 90%)" />
+              <XAxis dataKey="mois" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <RechartsTooltip content={<CustomChartTooltip />} />
+              <Area type="monotone" dataKey="leads" stroke="hsl(220, 70%, 55%)" fill="hsl(220, 70%, 55%)" fillOpacity={0.1} strokeWidth={2} name="Leads" />
+              <Area type="monotone" dataKey="convertis" stroke={BRAND_GREEN} fill={BRAND_GREEN} fillOpacity={0.1} strokeWidth={2} name="Convertis" />
+              <Area type="monotone" dataKey="resiliations" stroke={DESTRUCTIVE} fill={DESTRUCTIVE} fillOpacity={0.1} strokeWidth={2} name="Résiliations" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
       {/* Main content: Actions + Charts */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -312,7 +363,7 @@ export default function CockpitPage() {
                 </div>
                 <Tooltip>
                   <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-xs">Les leads contactés en moins de 4h convertissent à 50%. Au-delà de 12h, le taux chute sous 12%. Le SLA cible est de 4h maximum.</TooltipContent>
+                  <TooltipContent className="max-w-xs text-xs">Les leads contactés en moins de 4h convertissent à 50%. Au-delà de 12h, le taux chute sous 12%. SLA cible : 4h.</TooltipContent>
                 </Tooltip>
               </div>
             </CardHeader>
@@ -342,7 +393,7 @@ export default function CockpitPage() {
                   <CardTitle className="text-sm font-semibold">Impact des relances</CardTitle>
                   <Tooltip>
                     <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-xs">73% des leads ne reçoivent aucune relance. Avec 2 relances, la conversion passe de 15% à 39% (×2,6).</TooltipContent>
+                    <TooltipContent className="max-w-xs text-xs">73% des leads ne reçoivent aucune relance. Avec 2 relances : conversion ×2,6.</TooltipContent>
                   </Tooltip>
                 </div>
               </CardHeader>
@@ -370,7 +421,7 @@ export default function CockpitPage() {
                   <CardTitle className="text-sm font-semibold">Évolution CPL comparateurs</CardTitle>
                   <Tooltip>
                     <TooltipTrigger><Info className="size-3.5 text-muted-foreground/60" /></TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-xs">Coût par lead en hausse de +31% sur l&apos;année pour les deux comparateurs. Annonce de +40% supplémentaires pour 2027.</TooltipContent>
+                    <TooltipContent className="max-w-xs text-xs">CPL en hausse de +31% sur l&apos;année pour les deux comparateurs.</TooltipContent>
                   </Tooltip>
                 </div>
               </CardHeader>

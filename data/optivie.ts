@@ -17,18 +17,59 @@ export const kpiGlobal = {
 };
 
 export const leadsParMois: Record<string, number> = {
-  "January 2025": 225,
-  "February 2025": 180,
-  "March 2025": 206,
-  "April 2025": 189,
-  "May 2025": 162,
-  "June 2025": 153,
-  "July 2025": 135,
-  "August 2025": 125,
-  "September 2025": 198,
-  "October 2025": 180,
-  "November 2025": 162,
-  "December 2025": 144,
+  "2025-01": 225,
+  "2025-02": 180,
+  "2025-03": 206,
+  "2025-04": 189,
+  "2025-05": 162,
+  "2025-06": 153,
+  "2025-07": 135,
+  "2025-08": 125,
+  "2025-09": 198,
+  "2025-10": 180,
+  "2025-11": 162,
+  "2025-12": 144,
+};
+
+export type MoisData = {
+  mois: string;
+  leads: number;
+  convertis: number;
+  tauxConversion: number;
+  resiliations: number;
+  horsSLA: number;
+  relancesDues: number;
+  contratsNets: number;
+};
+
+export const donneesMensuelles: MoisData[] = [
+  { mois: "2025-01", leads: 225, convertis: 47, tauxConversion: 20.9, resiliations: 22, horsSLA: 185, relancesDues: 48, contratsNets: 25 },
+  { mois: "2025-02", leads: 180, convertis: 38, tauxConversion: 21.1, resiliations: 19, horsSLA: 149, relancesDues: 37, contratsNets: 19 },
+  { mois: "2025-03", leads: 206, convertis: 43, tauxConversion: 20.9, resiliations: 21, horsSLA: 168, relancesDues: 43, contratsNets: 22 },
+  { mois: "2025-04", leads: 189, convertis: 39, tauxConversion: 20.6, resiliations: 18, horsSLA: 156, relancesDues: 40, contratsNets: 21 },
+  { mois: "2025-05", leads: 162, convertis: 32, tauxConversion: 19.8, resiliations: 17, horsSLA: 133, relancesDues: 34, contratsNets: 15 },
+  { mois: "2025-06", leads: 153, convertis: 30, tauxConversion: 19.6, resiliations: 20, horsSLA: 126, relancesDues: 32, contratsNets: 10 },
+  { mois: "2025-07", leads: 135, convertis: 26, tauxConversion: 19.3, resiliations: 16, horsSLA: 111, relancesDues: 28, contratsNets: 10 },
+  { mois: "2025-08", leads: 125, convertis: 22, tauxConversion: 17.6, resiliations: 14, horsSLA: 104, relancesDues: 27, contratsNets: 8 },
+  { mois: "2025-09", leads: 198, convertis: 41, tauxConversion: 20.7, resiliations: 19, horsSLA: 162, relancesDues: 42, contratsNets: 22 },
+  { mois: "2025-10", leads: 180, convertis: 36, tauxConversion: 20.0, resiliations: 18, horsSLA: 148, relancesDues: 38, contratsNets: 18 },
+  { mois: "2025-11", leads: 162, convertis: 33, tauxConversion: 20.4, resiliations: 17, horsSLA: 132, relancesDues: 34, contratsNets: 16 },
+  { mois: "2025-12", leads: 144, convertis: 28, tauxConversion: 19.4, resiliations: 15, horsSLA: 118, relancesDues: 30, contratsNets: 13 },
+];
+
+export const resiliationsParMois: Record<string, { total: number; evitables: number; commissionPerdue: number }> = {
+  "2025-01": { total: 22, evitables: 8, commissionPerdue: 5760 },
+  "2025-02": { total: 19, evitables: 7, commissionPerdue: 4980 },
+  "2025-03": { total: 21, evitables: 8, commissionPerdue: 5510 },
+  "2025-04": { total: 18, evitables: 7, commissionPerdue: 4720 },
+  "2025-05": { total: 17, evitables: 6, commissionPerdue: 4460 },
+  "2025-06": { total: 20, evitables: 7, commissionPerdue: 5250 },
+  "2025-07": { total: 16, evitables: 6, commissionPerdue: 4190 },
+  "2025-08": { total: 14, evitables: 5, commissionPerdue: 3670 },
+  "2025-09": { total: 19, evitables: 7, commissionPerdue: 4980 },
+  "2025-10": { total: 18, evitables: 7, commissionPerdue: 4720 },
+  "2025-11": { total: 17, evitables: 6, commissionPerdue: 4460 },
+  "2025-12": { total: 15, evitables: 6, commissionPerdue: 3930 },
 };
 
 export const courtiers = [
